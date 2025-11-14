@@ -10,33 +10,33 @@ class ProductSeeder extends Seeder
     public function run(): void
     {
         Product::create([
-            'name' => 'Cadeira Gamer',
+            'name' => 'Anel de ouro',
             'price' => 799.90,
-            'description' => 'Cadeira ergonômica com apoio ajustável.'
+            'description' => 'Anel de ouro'
         ]);
 
         Product::create([
-            'name' => 'Notebook Dell',
+            'name' => 'Corrente de ouro',
             'price' => 3599.00,
-            'description' => 'Notebook Dell com processador i7 e 16GB RAM.'
+            'description' => 'Corrente'
         ]);
 
         Product::create([
-            'name' => 'Teclado Mecânico',
+            'name' => 'Brinco de diamante',
             'price' => 299.00,
-            'description' => 'Teclado mecânico branco.'
+            'description' => 'Brinco de diamante'
         ]);
 
         Product::create([
-            'name' => 'Mouse Gamer',
+            'name' => 'Colar de prata',
             'price' => 159.90,
-            'description' => 'Mouse gamer com alta precisão.'
+            'description' => 'Colar de prata'
         ]);
 
         Product::create([
-            'name' => 'Monitor 27"',
+            'name' => 'Pulseira de prata banhada a ouro"',
             'price' => 1299.00,
-            'description' => 'Monitor 27" Full HD com 144Hz.'
+            'description' => 'Pulseira banhada a ouro'
         ]);
     }
 }

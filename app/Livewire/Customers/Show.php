@@ -8,12 +8,18 @@ use Livewire\Component;
 class Show extends Component
 {
     public Customer $customer;
+    public bool $showViewModal = true; // 🔥 agora o modal tem um estado próprio
 
-    protected $listeners = ['closeViewModal' => 'closeModal'];
+    protected $listeners = ['close-view-modal' => 'closeModal'];
 
-    public function closeModal()
+    public function mount(Customer $customer)
     {
-        $this->dispatch('closeViewModal');
+        $this->customer = $customer->load('addresses');
+    }
+
+    public function closeModal(): void
+    {
+        $this->dispatch('close-view-modal'); // avisa o pai pra fechar
     }
 
     public function render()

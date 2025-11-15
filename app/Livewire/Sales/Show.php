@@ -4,14 +4,22 @@ namespace App\Livewire\Sales;
 
 use Livewire\Component;
 use App\Models\Sale;
+use Livewire\Attributes\On;
 
 class Show extends Component
 {
-    public $sale;
-    
-    public function mount (Sale $sale)
+    public Sale $sale;
+
+    protected $listeners = ['closeViewModal' => 'closeModal'];
+
+    public function mount(Sale $sale)
     {
-        $this->sale = $sale;
+        $this->sale = $sale->load('items.product', 'customer');
+    }
+
+    public function closeModal(): void
+    {
+        $this->dispatch('close-view-modal');
     }
 
     public function render()

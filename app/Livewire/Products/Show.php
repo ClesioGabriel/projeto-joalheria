@@ -4,6 +4,7 @@ namespace App\Livewire\Products;
 
 use App\Models\Product;
 use Livewire\Component;
+use Livewire\Attributes\On;
 
 class Show extends Component
 {
@@ -11,9 +12,14 @@ class Show extends Component
 
     protected $listeners = ['closeViewModal' => 'closeModal'];
 
-    public function closeModal()
+    public function mount(Product $product)
     {
-        $this->dispatch('closeViewModal');
+        $this->product = $product;
+    }
+
+    public function closeModal(): void
+    {
+        $this->dispatch('close-view-modal');
     }
 
     public function render()

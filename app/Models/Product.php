@@ -12,7 +12,16 @@ class Product extends Model
     protected $fillable = [
         'name',
         'price',
-        'description'
+        'description',
+        // --- ADICIONAR ESTES ---
+        'metal',
+        'weight',
+        'stone_type',
+        'stone_size',
+        'photo_path',
+        'serial_number',
+        'location',
+        // -------------------------
     ];
 
 
@@ -25,4 +34,10 @@ class Product extends Model
     {
         $this->attributes['price'] = (float) $value; 
     }
+    
+    // Você pode adicionar casts para peso/quilates se necessário
+    protected $casts = [
+        'price' => 'float',
+        'weight' => 'float', // Garante que o peso seja tratado como float
+    ];
 }

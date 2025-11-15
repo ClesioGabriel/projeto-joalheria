@@ -6,17 +6,19 @@ use App\Models\Product;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
+use Livewire\WithPagination; // Importar paginação se não estiver no seu original
 
 #[Layout('layouts.app')]
 class Index extends Component
 {
+    use WithPagination; // Usar a trait de paginação
+
     public bool $showFormModal = false;
     public bool $showViewModal = false;
     public ?Product $selectedProduct = null;
 
-    public $name = '';
-    public $price = '';
-    public $description = '';
+    // As propriedades $name, $price, e $description foram removidas
+    // pois o componente 'Form' agora gerencia seu próprio estado.
 
     #[On('product-saved')]
     #[On('close-form-modal')]
@@ -29,22 +31,21 @@ class Index extends Component
     public function create()
     {
         $this->selectedProduct = null;
-        $this->resetFormFields();
+        // $this->resetFormFields(); // Removido, não é mais necessário
         $this->showFormModal = true;
 
-        $this->showDropdown = false;
+        // $this->showDropdown = false; // Removido (parecia ser código antigo)
     }
 
     public function edit(Product $product)
     {
-        $this->name = $product->name;
-        $this->price = $product->price;
-        $this->description = $product->description;
+        // Os campos $name, $price, etc., não precisam ser definidos aqui.
+        // O 'Form.php' cuida disso no 'mount()'.
 
         $this->selectedProduct = $product;
         $this->showFormModal = true;
 
-        $this->showDropdown = false;
+        // $this->showDropdown = false; // Removido
     }
 
     public function view(Product $product)
@@ -62,16 +63,15 @@ class Index extends Component
 
     public function delete(Product $product)
     {
+        // Adicionar lógica para deletar a foto se ela existir
+        if ($product->photo_path) {
+            \Storage::disk('public')->delete($product->photo_path);
+        }
         $product->delete();
         $this->dispatch('notify', 'Produto excluído com sucesso!');
     }
 
-    public function resetFormFields()
-    {
-        $this->name = '';
-        $this->price = '';
-        $this->description = '';
-    }
+    // A função 'resetFormFields()' foi removida por ser desnecessária.
 
     public function render()
     {

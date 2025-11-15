@@ -29,6 +29,7 @@
                         <td class="px-5 py-3 text-center">{{ $product->name }}</td>
                         <td class="px-5 py-3 text-center">R$ {{ number_format($product->price, 2, ',', '.') }}</td>
                         <td class="px-5 py-3 text-center space-x-2">
+                            {{-- Este botão está correto, ele chama o método 'view' no Index.php --}}
                             <button wire:click="view({{ $product->id }})"
                                 class="inline-flex items-center px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-full hover:bg-green-700 transition">
                                 Visualizar
@@ -67,11 +68,13 @@
     />
     @endif
 
+    {{-- **** CORREÇÃO AQUI **** --}}
+    {{-- 
+      Se o modal de visualização deve ser exibido E o produto foi selecionado...
+      Renderize o componente 'show', passando APENAS o produto.
+    --}}
     @if ($showViewModal && $selectedProduct)
         <livewire:products.show
-            :name="$name" 
-            :price="$price" 
-            :description="$description" 
             :product="$selectedProduct" 
             wire:key="view-{{ $selectedProduct->id }}"
         />

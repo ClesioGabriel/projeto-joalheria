@@ -1,38 +1,94 @@
-<div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" wire:click.self="$dispatch('showViewModal', false)">
+{{-- 
+  Este componente só é renderizado se o @if no index.blade.php for verdadeiro.
+  Portanto, ele é o próprio modal.
+--}}
+<div 
+    class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
+    style="overflow-y: auto;"
+    x-data
+    {{-- Isso permite fechar o modal com a tecla 'Escape' --}}
+    x-on:keydown.escape.window="$dispatch('close-view-modal')"
+>
+    <div class="bg-white w-full max-w-lg rounded-lg shadow p-6 my-8">
+        
+        {{-- Verificamos se o produto está carregado (o que já deve estar) --}}
+        @if ($product)
+            
+            <!-- 1. FOTO DO PRODUTO -->
+            @if ($product->photo_path)
+                <div class="mb-4 w-full flex justify-center">
+                    <img src="{{ asset('storage/' . $product->photo_path) }}" 
+                         alt="{{ $product->name }}" 
+                         class="max-w-xs w-full h-auto rounded-lg shadow-md object-cover">
+                </div>
+            @else
+                <div class="mb-4 p-4 text-center bg-gray-100 rounded-lg">
+                    <span class="text-gray-500">Sem foto cadastrada</span>
+                </div>
+            @endif
 
-    <div class="p-8 max-w-2xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 text-center relative z-50" wire:click.stop>
-        <h2 class="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <svg class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 17v-6h6v6m-6 4h6a2 2 0 002-2V7a2 2 0 00-2-2h-3l-2-2H9a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-            </svg>
-            Detalhes do Produto
-        </h2>
+            <!-- 2. INFORMAÇÕES BÁSICAS -->
+            <h2 class="text-2xl font-bold mb-3">
+                🛍️ {{ $product->name }}
+            </h2>
+            
+            <p class="text-xl text-green-700 font-semibold mb-3">
+                💰 R$ {{ number_format($product->price, 2, ',', '.') }}
+            </p>
+            
+            @if($product->description)
+                <p class="text-gray-700 mb-4">
+                    📝 <strong>Descrição:</strong> {{ $product->description }}
+                </p>
+            @endif
 
-        <div class="space-y-4 text-gray-700 text-lg text-left">
-            <div>
-                <span class="font-semibold text-gray-900">🛍️ Nome:</span> {{ $product->name }}
+            <hr class="my-4">
+
+            <!-- 3. NOVOS CAMPOS (DETALHES DA PEÇA) -->
+            <h3 class="text-lg font-semibold mb-2">Detalhes da Peça</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-gray-800">
+
+                @if ($product->serial_number)
+                    <p><strong>Nº de Série:</strong> {{ $product->serial_number }}</p>
+                @endif
+
+                @if ($product->location)
+                    <p><strong>Localização:</strong> {{ $product->location }}</p>
+                @endif
+
+                @if ($product->metal)
+                    <p><strong>Metal:</strong> {{ $product->metal }}</p>
+                @endif
+
+                @if ($product->weight)
+                    <p><strong>Peso:</strong> {{ $product->weight }} g</p>
+                @endif
+
+                @if ($product->stone_type)
+                    <p><strong>Tipo da Pedra:</strong> {{ $product->stone_type }}</p>
+                @endif
+
+                @if ($product->stone_size)
+                    <p><strong>Tamanho da Pedra:</strong> {{ $product->stone_size }}</p>
+                @endif
+            </div>
+            
+            <!-- BOTÃO DE FECHAR -->
+            <div class="flex justify-end mt-6">
+                <button 
+                    type="button" 
+                    {{-- Chama o método 'closeModal' no Show.php --}}
+                    wire:click="closeModal" 
+                    class="inline-flex items-center px-4 py-2 bg-gray-500 text-white text-xs font-semibold rounded-full hover:bg-gray-700 transition"
+                >
+                    Fechar
+                </button>
             </div>
 
-            <div>
-                <span class="font-semibold text-gray-900">💰 Preço:</span>
-                R$ {{ number_format($product->price, 2, ',', '.') }}
+        @else
+            <div class="p-4 text-center text-red-500">
+                Erro: Não foi possível carregar os dados do produto.
             </div>
-
-            <div>
-                <span class="font-semibold text-gray-900">📝 Descrição:</span>
-                {{ $product->description ?? 'Sem descrição' }}
-            </div>
-        </div>
-
-        <div class="mt-8 flex justify-end">
-            <button
-                wire:click="$dispatch('close-view-modal')"
-                class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-700 transition"
-            >
-                Fechar
-            </button>
-        </div>
+        @endif
     </div>
-
 </div>

@@ -4,7 +4,6 @@ namespace App\Livewire\Products;
 
 use App\Models\Product;
 use Livewire\Component;
-use Livewire\Attributes\On; // Importar On
 
 class Show extends Component
 {
@@ -15,7 +14,6 @@ class Show extends Component
     {
         $this->dispatch('close-view-modal');
     }
-
 
     public function render()
     {

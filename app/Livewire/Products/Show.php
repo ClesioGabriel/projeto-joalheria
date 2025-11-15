@@ -4,7 +4,11 @@ namespace App\Livewire\Products;
 
 use App\Models\Product;
 use Livewire\Component;
+<<<<<<< HEAD
 use Livewire\Attributes\On; // Importar On
+=======
+use Livewire\Attributes\On;
+>>>>>>> origin/feat/arthur
 
 class Show extends Component
 {
@@ -16,6 +20,7 @@ class Show extends Component
     // A propriedade pública '$product' é preenchida por ser 'bound' (ligada)
     // à prop :product que o pai (Index) passou.
 
+<<<<<<< HEAD
     /**
      * Função para fechar o modal.
      * Ela dispara um evento 'up' (para o componente pai)
@@ -23,6 +28,15 @@ class Show extends Component
     public function closeModal()
     {
         // Dispara um evento que o 'Index.php' deve ouvir
+=======
+    public function mount(Product $product)
+    {
+        $this->product = $product;
+    }
+
+    public function closeModal(): void
+    {
+>>>>>>> origin/feat/arthur
         $this->dispatch('close-view-modal');
     }
 

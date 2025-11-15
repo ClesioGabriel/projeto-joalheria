@@ -1,7 +1,3 @@
-{{-- 
-  Este componente só é renderizado se o @if no index.blade.php for verdadeiro.
-  Portanto, ele é o próprio modal.
---}}
 <div 
     class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
     style="overflow-y: auto;"

@@ -34,7 +34,7 @@ class ProductSeeder extends Seeder
         ]);
 
         Product::create([
-            'name' => 'Pulseira de prata banhada a ouro"',
+            'name' => 'Pulseira de prata banhada a ouro',
             'price' => 1299.00,
             'description' => 'Pulseira banhada a ouro'
         ]);

@@ -21,7 +21,6 @@ class Index extends Component
 
     protected $queryString = ['search'];
 
-    // quando o formulário salvar ou pedir para fechar, esse método será chamado
     #[On('customer-saved')]
     #[On('close-form-modal')]
     public function closeFormModal(): void
@@ -33,12 +32,13 @@ class Index extends Component
 
     public function create(): void
     {
-        // garante que exista um modelo para o formulário — O PAI cria o model
         $this->selectedCustomer = new Customer();
         $this->showFormModal = true;
 
-        // opcional: notificar o form via evento (caso o form escute 'set-customer')
+        // avisa o Form para montar o modelo
         $this->dispatch('set-customer', $this->selectedCustomer);
+        // também emite browser event caso o componente filho espere um evento JS
+        $this->dispatchBrowserEvent('open-form-modal');
     }
 
     public function edit(Customer $customer): void
@@ -46,8 +46,8 @@ class Index extends Component
         $this->selectedCustomer = $customer;
         $this->showFormModal = true;
 
-        // notifica o componente filho para carregar os dados (se o filho usar listener)
         $this->dispatch('set-customer', $customer);
+        $this->dispatchBrowserEvent('open-form-modal');
     }
 
     public function view(int $customerId): void
@@ -66,13 +66,13 @@ class Index extends Component
     {
         $customer = Customer::find($customerId);
         if (!$customer) {
-            $this->dispatch('notify', ['message' => 'Cliente não encontrado', 'type' => 'error']);
+            $this->dispatch('notify', ['message' => 'Cliente não encontrado']);
             return;
         }
 
         $customer->delete();
-        $this->dispatch('notify', ['message' => 'Cliente excluído com sucesso!']);
         $this->resetPage();
+        $this->dispatch('notify', ['message' => 'Cliente excluído!']);
     }
 
     #[On('close-view-modal')]

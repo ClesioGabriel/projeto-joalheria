@@ -16,173 +16,101 @@ class Form extends Component
     public ?string $email = null;
     public ?string $phone = null;
 
-    public array $addresses = [];
-    public array $removedAddressIds = [];
-
-    public function mount(?Customer $customer = null)
-    {
-        $this->setCustomer($customer);
-    }
-
-    public function addAddressRow(): void
-    {
-        $this->addresses[] = [
-            'id' => null,
-            'street' => '',
-            'number' => '',
-            'neighborhood' => '',
-            'city' => '',
-            'state' => '',
-            'cep' => '',
-        ];
-    }
-
-    public function removeAddressRow(int $index): void
-    {
-        if (!isset($this->addresses[$index])) {
-            return;
-        }
-
-        $id = $this->addresses[$index]['id'] ?? null;
-        if ($id) {
-            $this->removedAddressIds[] = $id;
-        }
-
-        array_splice($this->addresses, $index, 1);
-
-        if (empty($this->addresses)) {
-            $this->addAddressRow();
-        }
-    }
-
-    public function save(): void
-    {
-        $this->validate(
-            Customer::rulesWithAddresses($this->customer->id ?? null),
-            Customer::messages()
-        );
-
-        DB::transaction(function () {
-            $this->customer = $this->customer && $this->customer->exists
-                ? tap($this->customer)->update($this->customerPayload())
-                : Customer::create($this->customerPayload());
-
-            $keepIds = [];
-
-            foreach ($this->addresses as $addr) {
-                $hasAny = collect(['street', 'number', 'neighborhood', 'city', 'state', 'cep'])
-                    ->contains(fn($f) => !empty($addr[$f]));
-
-                if (!$hasAny) continue;
-
-                if (!empty($addr['id'])) {
-                    $address = Address::where('id', $addr['id'])
-                        ->where('customer_id', $this->customer->id)
-                        ->first();
-
-                    if ($address) {
-                        $address->update($this->addressPayload($addr));
-                        $keepIds[] = $address->id;
-                        continue;
-                    }
-                }
-
-                $new = Address::create(array_merge(
-                    $this->addressPayload($addr),
-                    ['customer_id' => $this->customer->id]
-                ));
-                $keepIds[] = $new->id;
-            }
-
-            if (!empty($this->removedAddressIds)) {
-                Address::whereIn('id', $this->removedAddressIds)
-                    ->where('customer_id', $this->customer->id)
-                    ->delete();
-            }
-
-            Address::where('customer_id', $this->customer->id)
-                ->whereNotIn('id', $keepIds)
-                ->delete();
-        });
-
-        $this->dispatchBrowserEvent('notify', ['message' => 'Cliente salvo com sucesso!']);
-        $this->dispatch('customer-saved'); // 🔥 trocado emit → dispatch
-        $this->resetFormState();
-    }
-
-    protected function customerPayload(): array
-    {
-        return [
-            'name' => $this->name,
-            'email' => $this->email,
-            'phone' => $this->phone,
-        ];
-    }
-
-    protected function addressPayload(array $addr): array
-    {
-        return [
-            'street' => $addr['street'] ?? null,
-            'number' => $addr['number'] ?? null,
-            'neighborhood' => $addr['neighborhood'] ?? null,
-            'city' => $addr['city'] ?? null,
-            'state' => $addr['state'] ?? null,
-            'cep' => $addr['cep'] ?? null,
-        ];
-    }
+    // endereço simples (um endereço por cliente neste formulário)
+    public ?string $street = null;
+    public ?string $number = null;
+    public ?string $neighborhood = null;
+    public ?string $city = null;
+    public ?string $state = null;
+    public ?string $cep = null;
 
     #[On('set-customer')]
     public function setCustomer(?Customer $customer): void
     {
-        if ($customer) {
+        if ($customer && $customer->exists) {
             $this->customer = $customer;
             $this->name = $customer->name;
             $this->email = $customer->email;
             $this->phone = $customer->phone;
 
-            $this->addresses = $customer->addresses->map(fn(Address $a) => [
-                'id' => $a->id,
-                'street' => $a->street,
-                'number' => $a->number,
-                'neighborhood' => $a->neighborhood,
-                'city' => $a->city,
-                'state' => $a->state,
-                'cep' => $a->cep,
-            ])->toArray();
-
-            if (empty($this->addresses)) {
-                $this->addAddressRow();
-            }
+            // pega o primeiro endereço se houver
+            $addr = $customer->addresses()->first();
+            $this->street = $addr->street ?? null;
+            $this->number = $addr->number ?? null;
+            $this->neighborhood = $addr->neighborhood ?? null;
+            $this->city = $addr->city ?? null;
+            $this->state = $addr->state ?? null;
+            $this->cep = $addr->cep ?? null;
         } else {
-            $this->customer = null;
+            $this->customer = new Customer();
             $this->name = '';
             $this->email = '';
-            $this->phone = null;
-            $this->addresses = [[
-                'id' => null,
-                'street' => '',
-                'number' => '',
-                'neighborhood' => '',
-                'city' => '',
-                'state' => '',
-                'cep' => '',
-            ]];
-            $this->removedAddressIds = [];
+            $this->phone = '';
+            $this->street = $this->number = $this->neighborhood = $this->city = $this->state = $this->cep = null;
         }
     }
 
-    protected function resetFormState(): void
+    protected function rules(): array
     {
-        $this->addresses = [[
-            'id' => null,
-            'street' => '',
-            'number' => '',
-            'neighborhood' => '',
-            'city' => '',
-            'state' => '',
-            'cep' => '',
-        ]];
-        $this->removedAddressIds = [];
+        return [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:customers,email,' . ($this->customer->id ?? 'NULL'),
+            'phone' => 'nullable|string|max:20',
+
+            'street' => 'nullable|string|max:255',
+            'number' => 'nullable|string|max:50',
+            'neighborhood' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'cep' => 'nullable|string|max:20',
+        ];
+    }
+
+    public function save(): void
+    {
+        $this->validate();
+
+        DB::transaction(function () {
+            // salva cliente
+            $data = [
+                'name' => $this->name,
+                'email' => $this->email,
+                'phone' => $this->phone,
+            ];
+
+            if ($this->customer && $this->customer->exists) {
+                $this->customer->update($data);
+            } else {
+                $this->customer = Customer::create($data);
+            }
+
+            // trata endereço (um endereço)
+            $hasAnyAddress = collect([
+                $this->street, $this->number, $this->neighborhood, $this->city, $this->state, $this->cep
+            ])->filter()->isNotEmpty();
+
+            if ($hasAnyAddress) {
+                $address = $this->customer->addresses()->first();
+                $addrData = [
+                    'street' => $this->street,
+                    'number' => $this->number,
+                    'neighborhood' => $this->neighborhood,
+                    'city' => $this->city,
+                    'state' => $this->state,
+                    'cep' => $this->cep,
+                ];
+
+                if ($address) {
+                    $address->update($addrData);
+                } else {
+                    $this->customer->addresses()->create($addrData);
+                }
+            }
+        });
+
+        // notifica o Index para atualizar e fecha a modal no browser
+        $this->dispatch('customer-saved');
+        $this->dispatchBrowserEvent('close-form-modal');
     }
 
     public function render()

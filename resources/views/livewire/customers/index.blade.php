@@ -61,14 +61,39 @@
         @endif
     </div>
 
-    @if($showFormModal)
-    <livewire:customers.form 
-        :customer="$selectedCustomer ?? new \App\Models\Customer()" 
-        wire:key="form-{{ $selectedCustomer->id ?? 'new' }}" 
+    @if($showViewModal && $selectedCustomer)
+    <livewire:customers.show 
+        :customer="$selectedCustomer"
+        wire:key="show-{{ $selectedCustomer->id }}"
+        @close-view-modal.window="closeViewModal"
     />
     @endif
 
 </div>
+
+@if($showFormModal)
+    <livewire:customers.form 
+        :customer="$selectedCustomer"
+        wire:key="form-{{ $selectedCustomer->id ?? 'new' }}"
+        @close-form-modal.window="closeFormModal"
+    />
+@endif
+
+@if($showViewModal)
+    <livewire:customers.show 
+        :customer="$selectedCustomer"
+        wire:key="show-{{ $selectedCustomer->id }}"
+        @close-view-modal.window="closeViewModal"
+    />
+@endif
+
+@if($showFormModal)
+    <livewire:customers.form :customer="$selectedCustomer" wire:key="form-{{ $selectedCustomer->id ?? 'new' }}" />
+@endif
+
+@if($showViewModal && $selectedCustomer)
+    <livewire:customers.show :customer="$selectedCustomer" wire:key="show-{{ $selectedCustomer->id }}" />
+@endif
 
 @once
     <script src="//unpkg.com/alpinejs" defer></script>

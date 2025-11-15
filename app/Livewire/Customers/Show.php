@@ -19,11 +19,14 @@ class Show extends Component
 
     public function closeModal()
     {
+        // notifica o Index que deve fechar o modal
         $this->dispatch('close-view-modal');
+        // e aciona também um browser event para fechar se você usar Alpine
+        $this->dispatchBrowserEvent('close-view-modal');
     }
 
     public function render()
     {
-        return view('livewire.products.show');
+        return view('livewire.customers.show');
     }
 }

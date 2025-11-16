@@ -3,20 +3,20 @@
 namespace App\Livewire\Customers;
 
 use App\Models\Customer;
-use App\Models\Address;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
-use Livewire\Attributes\On;
 
 class Form extends Component
 {
+    public ?int $customerId = null;
     public ?Customer $customer = null;
 
     public ?string $name = null;
     public ?string $email = null;
     public ?string $phone = null;
 
-    // endereço simples (um endereço por cliente neste formulário)
     public ?string $street = null;
     public ?string $number = null;
     public ?string $neighborhood = null;
@@ -24,30 +24,40 @@ class Form extends Component
     public ?string $state = null;
     public ?string $cep = null;
 
-    #[On('set-customer')]
-    public function setCustomer(?Customer $customer): void
-    {
-        if ($customer && $customer->exists) {
-            $this->customer = $customer;
-            $this->name = $customer->name;
-            $this->email = $customer->email;
-            $this->phone = $customer->phone;
+    // debug helper: armazena resposta bruta do viaCEP para inspecionar se necessário
+    public $debugViaCepResponse = null;
 
-            // pega o primeiro endereço se houver
-            $addr = $customer->addresses()->first();
-            $this->street = $addr->street ?? null;
-            $this->number = $addr->number ?? null;
-            $this->neighborhood = $addr->neighborhood ?? null;
-            $this->city = $addr->city ?? null;
-            $this->state = $addr->state ?? null;
-            $this->cep = $addr->cep ?? null;
-        } else {
-            $this->customer = new Customer();
-            $this->name = '';
-            $this->email = '';
-            $this->phone = '';
-            $this->street = $this->number = $this->neighborhood = $this->city = $this->state = $this->cep = null;
+    public bool $lookupLoading = false;
+
+    public function mount(?int $customerId = null): void
+    {
+        $this->customerId = $customerId;
+
+        if ($customerId) {
+            $customer = Customer::with('addresses')->find($customerId);
+            if ($customer) {
+                $this->customer = $customer;
+                $this->name = $customer->name;
+                $this->email = $customer->email;
+                $this->phone = $customer->phone;
+
+                $addr = $customer->addresses()->first();
+                $this->street = $addr->street ?? null;
+                $this->number = $addr->number ?? null;
+                $this->neighborhood = $addr->neighborhood ?? null;
+                $this->city = $addr->city ?? null;
+                $this->state = $addr->state ?? null;
+                $this->cep = $addr->cep ?? null;
+                return;
+            }
         }
+
+        // novo cliente
+        $this->customer = null;
+        $this->name = '';
+        $this->email = '';
+        $this->phone = '';
+        $this->street = $this->number = $this->neighborhood = $this->city = $this->state = $this->cep = null;
     }
 
     protected function rules(): array
@@ -56,7 +66,6 @@ class Form extends Component
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:customers,email,' . ($this->customer->id ?? 'NULL'),
             'phone' => 'nullable|string|max:20',
-
             'street' => 'nullable|string|max:255',
             'number' => 'nullable|string|max:50',
             'neighborhood' => 'nullable|string|max:255',
@@ -66,12 +75,72 @@ class Form extends Component
         ];
     }
 
+    /**
+     * Server-side lookup (ViaCEP). Preenche campos se encontrar.
+     */
+    public function lookupCep(): void
+    {
+        $this->lookupLoading = true;
+        $this->debugViaCepResponse = null;
+
+        $raw = $this->cep ?? '';
+        $digits = preg_replace('/\D/', '', $raw);
+
+        if (strlen($digits) < 8) {
+            $this->lookupLoading = false;
+            $this->dispatch('notify', ['message' => 'CEP inválido. Informe 8 dígitos ou preencha manualmente.', 'type' => 'warning']);
+            return;
+        }
+
+        $url = "https://viacep.com.br/ws/{$digits}/json/";
+
+        try {
+            $response = Http::timeout(6)->get($url);
+
+            // salvar resposta bruta para debug
+            $this->debugViaCepResponse = $response->body();
+
+            if ($response->failed()) {
+                Log::warning('ViaCEP request failed', ['url' => $url, 'status' => $response->status()]);
+                $this->lookupLoading = false;
+                $this->dispatch('notify', ['message' => 'Erro ao buscar CEP (rede). Preencha manualmente.', 'type' => 'error']);
+                return;
+            }
+
+            $json = $response->json();
+
+            if (isset($json['erro']) && $json['erro'] === true) {
+                $this->lookupLoading = false;
+                $this->dispatch('notify', ['message' => 'CEP não encontrado. Preencha manualmente ou tente outro CEP.', 'type' => 'warning']);
+                return;
+            }
+
+            // preenche campos
+            $this->street = $json['logradouro'] ?? $this->street;
+            $this->neighborhood = $json['bairro'] ?? $this->neighborhood;
+            $this->city = $json['localidade'] ?? $this->city;
+            $this->state = $json['uf'] ?? $this->state;
+            $this->cep = substr($digits, 0, 5) . '-' . substr($digits, 5);
+
+            $this->lookupLoading = false;
+            $this->dispatch('notify', ['message' => 'Endereço preenchido pelo CEP.', 'type' => 'success']);
+        } catch (\Throwable $e) {
+            Log::error('lookupCep exception: '.$e->getMessage(), ['url' => $url]);
+            $this->lookupLoading = false;
+            $this->dispatch('notify', ['message' => 'Erro ao buscar CEP. Preencha manualmente.', 'type' => 'error']);
+        }
+    }
+
+    public function cancel(): void
+    {
+        $this->dispatch('close-form-modal');
+    }
+
     public function save(): void
     {
         $this->validate();
 
         DB::transaction(function () {
-            // salva cliente
             $data = [
                 'name' => $this->name,
                 'email' => $this->email,
@@ -84,7 +153,6 @@ class Form extends Component
                 $this->customer = Customer::create($data);
             }
 
-            // trata endereço (um endereço)
             $hasAnyAddress = collect([
                 $this->street, $this->number, $this->neighborhood, $this->city, $this->state, $this->cep
             ])->filter()->isNotEmpty();
@@ -108,9 +176,8 @@ class Form extends Component
             }
         });
 
-        // notifica o Index para atualizar e fecha a modal no browser
         $this->dispatch('customer-saved');
-        $this->dispatchBrowserEvent('close-form-modal');
+        $this->dispatch('close-form-modal');
     }
 
     public function render()

@@ -30,24 +30,34 @@ class Index extends Component
         $this->resetPage();
     }
 
-    public function create(): void
+    #[On('close-view-modal')]
+    public function closeViewModal(): void
     {
-        $this->selectedCustomer = new Customer();
-        $this->showFormModal = true;
-
-        // avisa o Form para montar o modelo
-        $this->dispatch('set-customer', $this->selectedCustomer);
-        // também emite browser event caso o componente filho espere um evento JS
-        $this->dispatchBrowserEvent('open-form-modal');
+        $this->showViewModal = false;
+        $this->selectedCustomer = null;
     }
 
-    public function edit(Customer $customer): void
+    public function create(): void
     {
+        // abre o form sem passar modelo por evento — binding fará o resto
+        $this->selectedCustomer = null;
+        $this->showFormModal = true;
+        // opcional JS event:
+        $this->dispatch('open-form-modal');
+    }
+
+    public function edit(int $customerId): void
+    {
+        $customer = Customer::find($customerId);
+        if (!$customer) {
+            $this->dispatch('notify', ['message' => 'Cliente não encontrado', 'type' => 'error']);
+            return;
+        }
+
+        // passa o modelo para a view via binding
         $this->selectedCustomer = $customer;
         $this->showFormModal = true;
-
-        $this->dispatch('set-customer', $customer);
-        $this->dispatchBrowserEvent('open-form-modal');
+        $this->dispatch('open-form-modal');
     }
 
     public function view(int $customerId): void
@@ -73,12 +83,6 @@ class Index extends Component
         $customer->delete();
         $this->resetPage();
         $this->dispatch('notify', ['message' => 'Cliente excluído!']);
-    }
-
-    #[On('close-view-modal')]
-    public function closeViewModal(): void
-    {
-        $this->reset(['showViewModal', 'selectedCustomer']);
     }
 
     public function render()

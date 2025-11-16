@@ -24,7 +24,7 @@
 
         <div class="mt-8 flex justify-end">
             <button
-                wire:click="closeModal"
+                wire:click="$parent.closeViewModal"
                 class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-700 transition">
                 Fechar
             </button>

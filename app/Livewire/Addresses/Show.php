@@ -10,19 +10,19 @@ class Show extends Component
 {
     public Address $address;
 
-    #[On('close-address-view')]
-    public function closeModal(): void
-    {
-        $this->dispatch('close-address-view');
-    }
-
     public function mount(Address $address)
     {
-        $this->address = $address->load('customer');
+        // load customers relation for display
+        $this->address = $address->load('customers');
     }
 
     public function render()
     {
         return view('livewire.addresses.show');
+    }
+
+    public function closeModal()
+    {
+        $this->emitUp('close-view-modal');
     }
 }

@@ -28,15 +28,14 @@
             <table class="w-full bg-white shadow-xl rounded-xl overflow-hidden">
                 <thead class="bg-gray-100 text-xs uppercase text-gray-600">
                     <tr>
-                        <th class="px-5 py-3 text-center">ID</th>
+                        <th class="px-5 py-3 text-center">CPF</th>
                         <th class="px-5 py-3 text-center">Nome</th>
                         <th class="px-5 py-3 text-center">Email</th>
                         <th class="px-5 py-3 text-center">Telefone</th>
 
-                        {{-- endereço agora alinhado à esquerda para não empurrar ações --}}
                         <th class="px-5 py-3 text-left">Endereço</th>
 
-                        {{-- reserva largura para ações e mantém centralizado --}}
+                        {{-- largura reservada para ações --}}
                         <th class="px-5 py-3 text-center w-40">Ações</th>
                     </tr>
                 </thead>
@@ -47,7 +46,7 @@
                         data-name="{{ strtolower($customer->name) }}"
                         data-email="{{ strtolower($customer->email) }}"
                         data-phone="{{ strtolower($customer->phone ?? '') }}">
-                        <td class="px-5 py-3 text-center">{{ $customer->id }}</td>
+                        <td class="px-5 py-3 text-center">{{ $customer->cpf }}</td>
 
                         <td class="px-5 py-3 text-center">{{ $customer->name }}</td>
 
@@ -55,16 +54,19 @@
 
                         <td class="px-5 py-3 text-center">{{ $customer->phone ?? '-' }}</td>
 
-                        {{-- endereço com quebra de linha e limite de largura para manter a tabela limpa --}}
+                        {{-- exibe primeiro endereço: CEP primeiro e número --}}
                         <td class="px-5 py-3 text-left max-w-md">
                             <div class="text-s text-black break-words">
-                                {{ $customer->addresses->first()
-            ? 'CEP: ' . $customer->addresses->first()->cep . ' - Nº ' . $customer->addresses->first()->number
-            : 'Sem endereço cadastrado' }}
+                                @php $addr = $customer->addresses->first(); @endphp
+                                @if($addr)
+                                    CEP: {{ $addr->cep ?? '-' }} - Nº {{ $addr->number ?? '-' }}
+                                @else
+                                    Sem endereço cadastrado
+                                @endif
                             </div>
                         </td>
 
-                        {{-- ações: wrapper flex com nowrap para evitar quebra entre botões --}}
+                        {{-- ações: wrapper flex com nowrap --}}
                         <td class="px-5 py-3 text-center">
                             <div class="flex items-center justify-center gap-2 whitespace-nowrap">
                                 <button wire:click="view({{ $customer->id }})"

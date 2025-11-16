@@ -14,12 +14,19 @@ class Customer extends Model
         'name',
         'email',
         'phone',
+        'cpf',
     ];
 
-    public static function rules($id = null): array
+     public static function rules($id = null): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'cpf' => [
+                'required',
+                'string',
+                'size:11',
+                Rule::unique('customers', 'cpf')->ignore($id),
+            ],
+            'name' => 'required|string|max:120',
             'email' => [
                 'required',
                 'email',
@@ -32,6 +39,9 @@ class Customer extends Model
     public static function messages(): array
     {
         return [
+            'cpf.required' => 'O CPF é obrigatório.',
+            'cpf.size' => 'O CPF deve ter exatamente 11 dígitos.',
+            'cpf.unique' => 'Este CPF já está em uso.',
             'name.required' => 'O nome é obrigatório.',
             'email.required' => 'O e-mail é obrigatório.',
             'email.email' => 'Digite um e-mail válido.',
@@ -68,7 +78,7 @@ class Customer extends Model
     ];
 
     public function addresses()
-    {
-        return $this->hasMany(Address::class);
-    }
+{
+    return $this->belongsToMany(Address::class, 'address_customer');
+}
 }

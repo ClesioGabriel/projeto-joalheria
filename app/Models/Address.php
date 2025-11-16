@@ -3,36 +3,39 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Address extends Model
 {
+    use HasFactory;
+
+    // remove customer_id daqui: pivot table fará a associação
     protected $fillable = [
-        'customer_id',
         'street',
         'number',
         'neighborhood',
         'city',
         'state',
-        'cep'
+        'cep',
     ];
 
     public static function rules($id = null)
     {
-
         return [
-            'street' => 'string|max:250',
-            'number' => 'string|max:50',
-            'neighborhood' => 'string|max:100',
-            'city' => 'string|max:50',
-            'state' => 'string|max:50',
-            'cep'  => 'string|max:8'
+            'street' => 'nullable|string|max:150',
+            'number' => 'nullable|string|max:50',
+            'neighborhood' => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:50',
+            'state' => 'nullable|string|max:50',
+            'cep'  => 'nullable|string|max:20',
         ];
     }
 
-    
-
-    public function customer()
+    /**
+     * Many-to-many: an address can belong to many customers.
+     */
+    public function customers()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsToMany(Customer::class, 'address_customer');
     }
 }

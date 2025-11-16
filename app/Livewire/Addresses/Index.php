@@ -36,7 +36,6 @@ class Index extends Component
         $this->showFormModal = true;
 
         // avisa o Form (componente filho) para setar o customer/id
-        // dispatch envia o payload como segundo argumento
         $this->dispatch('set-customer-for-address', $customerId);
         $this->dispatch('set-address', null);
     }
@@ -50,7 +49,7 @@ class Index extends Component
 
     public function view(Address $address): void
     {
-        $this->selectedAddress = $address->load('customer');
+        $this->selectedAddress = $address->load('customers');
         $this->showViewModal = true;
     }
 
@@ -62,6 +61,7 @@ class Index extends Component
 
     public function delete(Address $address): void
     {
+        // when deleting, pivot entries are removed automatically (cascade) if migration setup
         $address->delete();
         $this->dispatch('notify', ['message' => 'Endereço excluído com sucesso!']);
         $this->resetPage();
@@ -69,10 +69,12 @@ class Index extends Component
 
     public function render()
     {
-        $query = Address::query()->with('customer');
+        $query = Address::query()->with('customers');
 
         if ($this->customerFilter) {
-            $query->where('customer_id', $this->customerFilter);
+            $query->whereHas('customers', function ($q) {
+                $q->where('id', $this->customerFilter);
+            });
         }
 
         if ($this->search !== '') {

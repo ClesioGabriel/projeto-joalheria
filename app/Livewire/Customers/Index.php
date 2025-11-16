@@ -39,10 +39,8 @@ class Index extends Component
 
     public function create(): void
     {
-        // abre o form sem passar modelo por evento — binding fará o resto
         $this->selectedCustomer = null;
         $this->showFormModal = true;
-        // opcional JS event:
         $this->dispatch('open-form-modal');
     }
 
@@ -54,7 +52,6 @@ class Index extends Component
             return;
         }
 
-        // passa o modelo para a view via binding
         $this->selectedCustomer = $customer;
         $this->showFormModal = true;
         $this->dispatch('open-form-modal');

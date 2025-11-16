@@ -3,6 +3,7 @@
 namespace App\Livewire\Customers;
 
 use App\Models\Customer;
+use App\Models\Address;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,7 @@ class Form extends Component
 {
     public ?int $customerId = null;
     public ?Customer $customer = null;
+    public $cpf;
 
     public ?string $name = null;
     public ?string $email = null;
@@ -34,13 +36,16 @@ class Form extends Component
         $this->customerId = $customerId;
 
         if ($customerId) {
+            // carregamos com addresses (belongsToMany)
             $customer = Customer::with('addresses')->find($customerId);
             if ($customer) {
                 $this->customer = $customer;
                 $this->name = $customer->name;
                 $this->email = $customer->email;
                 $this->phone = $customer->phone;
+                $this->cpf = $customer->cpf ?? '';
 
+                // pega apenas o primeiro endereço associado (se existir)
                 $addr = $customer->addresses()->first();
                 $this->street = $addr->street ?? null;
                 $this->number = $addr->number ?? null;
@@ -63,14 +68,14 @@ class Form extends Component
     protected function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:120',
             'email' => 'required|email|unique:customers,email,' . ($this->customer->id ?? 'NULL'),
             'phone' => 'nullable|string|max:20',
-            'street' => 'nullable|string|max:255',
+            'street' => 'nullable|string|max:150',
             'number' => 'nullable|string|max:50',
-            'neighborhood' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:255',
-            'state' => 'nullable|string|max:255',
+            'neighborhood' => 'nullable|string|max:150',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
             'cep' => 'nullable|string|max:20',
         ];
     }
@@ -125,7 +130,7 @@ class Form extends Component
             $this->lookupLoading = false;
             $this->dispatch('notify', ['message' => 'Endereço preenchido pelo CEP.', 'type' => 'success']);
         } catch (\Throwable $e) {
-            Log::error('lookupCep exception: '.$e->getMessage(), ['url' => $url]);
+            Log::error('lookupCep exception: ' . $e->getMessage(), ['url' => $url]);
             $this->lookupLoading = false;
             $this->dispatch('notify', ['message' => 'Erro ao buscar CEP. Preencha manualmente.', 'type' => 'error']);
         }
@@ -145,20 +150,28 @@ class Form extends Component
                 'name' => $this->name,
                 'email' => $this->email,
                 'phone' => $this->phone,
+                'cpf' => $this->cpf,
+
             ];
 
+            // create or update customer
             if ($this->customer && $this->customer->exists) {
                 $this->customer->update($data);
             } else {
                 $this->customer = Customer::create($data);
             }
 
+            // decide se há endereço preenchido (qualquer campo não-nulo)
             $hasAnyAddress = collect([
-                $this->street, $this->number, $this->neighborhood, $this->city, $this->state, $this->cep
+                $this->street,
+                $this->number,
+                $this->neighborhood,
+                $this->city,
+                $this->state,
+                $this->cep
             ])->filter()->isNotEmpty();
 
             if ($hasAnyAddress) {
-                $address = $this->customer->addresses()->first();
                 $addrData = [
                     'street' => $this->street,
                     'number' => $this->number,
@@ -168,10 +181,33 @@ class Form extends Component
                     'cep' => $this->cep,
                 ];
 
-                if ($address) {
-                    $address->update($addrData);
+                // pega primeiro endereço atual (se existir)
+                $existing = $this->customer->addresses()->first();
+
+                if ($existing) {
+                    // se o endereço atual pertence apenas a este cliente podemos atualizar direto
+                    $ownersCount = $existing->customers()->count();
+
+                    if ($ownersCount <= 1) {
+                        // seguro atualizar pois não afeta outros clientes
+                        $existing->update($addrData);
+                    } else {
+                        // endereço compartilhado: não sobrescrever; criar novo e substituir o vínculo
+                        $newAddress = Address::create($addrData);
+                        // anexa o novo endereço
+                        $this->customer->addresses()->attach($newAddress->id);
+                        // remove apenas a associação antiga deste cliente
+                        $this->customer->addresses()->detach($existing->id);
+                    }
                 } else {
-                    $this->customer->addresses()->create($addrData);
+                    // sem endereço anterior: cria e associa
+                    $new = Address::create($addrData);
+                    $this->customer->addresses()->attach($new->id);
+                }
+            } else {
+                // nenhum endereço informado: desassocia quaisquer addresses existentes deste cliente
+                if ($this->customer->addresses()->exists()) {
+                    $this->customer->addresses()->detach();
                 }
             }
         });

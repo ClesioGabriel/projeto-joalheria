@@ -15,10 +15,9 @@ class Show extends Component
         $this->customer = $customer->load('addresses');
     }
 
-    // mantido caso queira dispatch de evento
     public function closeModal()
     {
-        $this->dispatch('close-view-modal');
+        $this->showViewModal = false;   // FECHA O MODAL
     }
 
     public function render()

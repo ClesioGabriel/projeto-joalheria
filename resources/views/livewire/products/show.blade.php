@@ -2,15 +2,12 @@
     class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
     style="overflow-y: auto;"
     x-data
-    {{-- Isso permite fechar o modal com a tecla 'Escape' --}}
     x-on:keydown.escape.window="$dispatch('close-view-modal')"
 >
     <div class="bg-white w-full max-w-lg rounded-lg shadow p-6 my-8">
         
-        {{-- Verificamos se o produto está carregado (o que já deve estar) --}}
         @if ($product)
             
-            <!-- 1. FOTO DO PRODUTO -->
             @if ($product->photo_path)
                 <div class="mb-4 w-full flex justify-center">
                     <img src="{{ asset('storage/' . $product->photo_path) }}" 
@@ -23,7 +20,6 @@
                 </div>
             @endif
 
-            <!-- 2. INFORMAÇÕES BÁSICAS -->
             <h2 class="text-2xl font-bold mb-3">
                 🛍️ {{ $product->name }}
             </h2>
@@ -40,9 +36,13 @@
 
             <hr class="my-4">
 
-            <!-- 3. NOVOS CAMPOS (DETALHES DA PEÇA) -->
-            <h3 class="text-lg font-semibold mb-2">Detalhes da Peça</h3>
+            <h3 class="text-lg font-semibold mb-2">Detalhes</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-gray-800">
+
+                {{-- --- ADICIONADO: Tipo e Estoque --- --}}
+                <p><strong>Tipo:</strong> {{ $product->isFinished() ? 'Produto Acabado' : 'Matéria-Prima' }}</p>
+                <p><strong>Estoque:</strong> {{ $product->stock }}</p>
+                {{-- ------------------------------------ --}}
 
                 @if ($product->serial_number)
                     <p><strong>Nº de Série:</strong> {{ $product->serial_number }}</p>
@@ -69,11 +69,9 @@
                 @endif
             </div>
             
-            <!-- BOTÃO DE FECHAR -->
             <div class="flex justify-end mt-6">
                 <button 
                     type="button" 
-                    {{-- Chama o método 'closeModal' no Show.php --}}
                     wire:click="closeModal" 
                     class="inline-flex items-center px-4 py-2 bg-gray-500 text-white text-xs font-semibold rounded-full hover:bg-gray-700 transition"
                 >

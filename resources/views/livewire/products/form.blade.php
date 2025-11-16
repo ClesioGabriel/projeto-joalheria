@@ -1,16 +1,16 @@
+{{-- 
+  REMOVIDO: x-data, x-show e x-on:close-form.window.
+  A exibição deste modal é controlada pelo @if($showFormModal) no index.blade.php.
+--}}
 <div 
-    x-data="{ open: true }"
-    x-show="open"
-    x-on:close-form.window="open = false"
     class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
-    style="overflow-y: auto;" {{-- Adicionado para permitir scroll se o form for grande --}}
+    style="overflow-y: auto;"
 >
-    <div class="bg-white w-full max-w-lg rounded-lg shadow p-6 my-8"> {{-- Adicionado my-8 para margem --}}
+    <div class="bg-white w-full max-w-lg rounded-lg shadow p-6 my-8">
         <h2 class="text-xl font-bold mb-4">
             Informações do Produto
         </h2>
 
-        {{-- Exibir número de série se existir --}}
         @if($serial_number)
             <div class="mb-4 p-2 bg-gray-100 rounded">
                 <span class="font-semibold">Nº de Série:</span> {{ $serial_number }}
@@ -25,6 +25,24 @@
                 @error('name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
             </div>
 
+            {{-- --- ADICIONADO: Campos Faltantes (Stock e Type) --- --}}
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Tipo de Produto</label>
+                    <select wire:model.defer="product_type" class="w-full border rounded px-3 py-2 bg-white">
+                        <option value="{{ \App\Models\Product::TYPE_FINISHED }}">Produto Acabado</option>
+                        <option value="{{ \App\Models\Product::TYPE_RAW }}">Matéria-Prima</option>
+                    </select>
+                    @error('product_type') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Estoque</label>
+                    <input type="number" wire:model.defer="stock" step="1" class="w-full border rounded px-3 py-2">
+                    @error('stock') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                </div>
+            </div>
+            {{-- -------------------------------------------------- --}}
+
             <div>
                 <label class="block text-sm font-medium text-gray-700">Preço</label>
                 <input type="number" wire:model.defer="price" step="0.01" class="w-full border rounded px-3 py-2">
@@ -37,7 +55,7 @@
                 @error('description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
             </div>
 
-            {{-- --- NOVOS CAMPOS --- --}}
+            {{-- --- NOVOS CAMPOS (Joia) --- --}}
             <hr>
 
             <div class="grid grid-cols-2 gap-4">
@@ -77,30 +95,44 @@
                 <input type="file" wire:model="photo" class="w-full border rounded px-3 py-2">
                 @error('photo') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-                {{-- Preview da foto nova --}}
                 @if ($photo)
                     <div class="mt-2">
                         <img src="{{ $photo->temporaryUrl() }}" class="w-32 h-32 object-cover rounded">
                     </div>
                 @elseif ($existing_photo_path)
-                    {{-- Preview da foto existente --}}
                     <div class="mt-2">
                         <img src="{{ asset('storage/' . $existing_photo_path) }}" class="w-32 h-32 object-cover rounded">
                     </div>
                 @endif
             </div>
-            {{-- ----------------------- --}}
 
             <div class="flex justify-end space-x-2 mt-4">
+                {{-- --- BOTÃO CANCELAR CORRIGIDO --- --}}
                 <button 
                     type="button" 
-                    x-on:click="open = false; $dispatch('close-form')"
-                    class="inline-flex items-center px-4 py-2 bg-red-500 text-white text-xs font-semibold rounded-full hover:bg-red-700 transition"
+                    {{-- Dispara o evento que o Index.php espera --}}
+                    wire:click="$dispatch('close-form-modal')"
+                    wire:loading.attr="disabled" {{-- Desabilita durante o 'save' --}}
+                    class="inline-flex items-center px-4 py-2 bg-red-500 text-white text-xs font-semibold rounded-full hover:bg-red-700 transition disabled:opacity-50"
                 >
                     Cancelar
                 </button>
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-700 transition">
-                    Salvar
+                
+                {{-- --- BOTÃO SALVAR CORRIGIDO --- --}}
+                <button 
+                    type="submit" 
+                    wire:loading.attr="disabled" {{-- Desabilita durante o submit --}}
+                    wire:target="save"         {{-- Target é a ação 'save' --}}
+                    class="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {{-- Mostra 'Salvar' por padrão --}}
+                    <span wire:loading.remove wire:target="save">
+                        Salvar
+                    </span>
+                    {{-- Mostra 'Salvando...' durante o loading --}}
+                    <span wire:loading wire:target="save">
+                        Salvando...
+                    </span>
                 </button>
             </div>
         </form>

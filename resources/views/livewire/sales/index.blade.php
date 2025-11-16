@@ -13,6 +13,16 @@
                 </button>
             </div>
 
+            <div class="mb-4">
+                <input
+                    type="text"
+                    id="sale-search"
+                    placeholder="Buscar pedidos por cliente, data, status ou valor..."
+                    class="block w-full p-3 text-gray-900 border border-gray-300 rounded-lg bg-white text-base focus:ring-blue-500 focus:border-blue-500"
+                    onkeyup="filterSales()"
+                >
+            </div>
+
             <table class="w-full max-w-6xl bg-white shadow-xl rounded-xl overflow-hidden">
                 <thead class="bg-gray-100 text-xs uppercase text-gray-600">
                     <tr>
@@ -26,7 +36,14 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     @foreach ($sales as $sale)
-                        <tr class="hover:bg-gray-50 transition">
+                        <tr 
+                            class="sale-item hover:bg-gray-50 transition"
+                            data-id="{{ $sale->id }}"
+                            data-customer="{{ strtolower($sale->customer->name ?? '') }}"
+                            data-date="{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}"
+                            data-status="{{ strtolower($sale->status) }}"
+                            data-total="{{ number_format($sale->total_amount, 2, ',', '.') }}"
+                        >
                             <td class="px-5 py-3 text-center">{{ $sale->id }}</td>
                             <td class="px-5 py-3 text-center">{{ $sale->customer->name ?? '—' }}</td>
                             <td class="px-5 py-3 text-center">{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}</td>
@@ -84,4 +101,33 @@
 
 @once
     <script src="//unpkg.com/alpinejs" defer></script>
+@endonce
+
+@once
+    <script src="//unpkg.com/alpinejs" defer></script>
+
+    <script>
+        function filterSales() {
+            const search = document.getElementById('sale-search').value.toLowerCase().trim();
+            const items = document.querySelectorAll('.sale-item');
+
+            items.forEach(item => {
+                const id = item.dataset.id ?? '';
+                const customer = item.dataset.customer ?? '';
+                const date = item.dataset.date ?? '';
+                const status = item.dataset.status ?? '';
+                const total = item.dataset.total ?? '';
+
+                const match =
+                    search === '' ||
+                    id.includes(search) ||
+                    customer.includes(search) ||
+                    date.includes(search) ||
+                    status.includes(search) ||
+                    total.includes(search);
+
+                item.style.display = match ? '' : 'none';
+            });
+        }
+    </script>
 @endonce

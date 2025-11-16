@@ -43,11 +43,11 @@
                 <p><strong>Tipo:</strong> {{ $product->isFinished() ? 'Produto Acabado' : 'Matéria-Prima' }}</p>
                 <p><strong>Estoque:</strong> {{ $product->stock }}</p>
                 {{-- ------------------------------------ --}}
-
+                    {{--
                 @if ($product->serial_number)
                     <p><strong>Nº de Série:</strong> {{ $product->serial_number }}</p>
                 @endif
-
+                    --}}
                 @if ($product->location)
                     <p><strong>Localização:</strong> {{ $product->location }}</p>
                 @endif

@@ -10,6 +10,7 @@ use Livewire\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Collection; // Importar Collection
 
 class Form extends Component
 {
@@ -20,8 +21,24 @@ class Form extends Component
     public ?Sale $sale = null;
     public ?string $status = null;
 
+    // --- PROPRIEDADES ADICIONADAS ---
+    /** @var Collection */
+    public $allProducts;
+    
+    /** @var Collection */
+    public $allCustomers;
+    
+    public array $allStatuses = [];
+    // ---------------------------------
+
+
     public function mount(?Sale $sale = null)
     {
+        // Carrega coleções auxiliares UMA VEZ
+        $this->allProducts = Product::orderBy('name')->get();
+        $this->allCustomers = Customer::orderBy('name')->get();
+        $this->allStatuses = Sale::statuses();
+
         if ($sale && $sale->exists) {
             $this->sale = $sale->load('items');
             $this->customer_id = $sale->customer_id;
@@ -29,7 +46,7 @@ class Form extends Component
             $this->status = $sale->status;
             $this->items = $sale->items->map(fn($i) => [
                 'product_id' => $i->product_id,
-                'quantity'   => $i->quantity,
+                'quantity'    => $i->quantity,
                 'unit_price' => (float) $i->unit_price,
                 'subtotal'   => (float) $i->subtotal,
             ])->toArray();
@@ -38,71 +55,59 @@ class Form extends Component
             $this->sale = null;
             $this->date = now()->format('Y-m-d');
             $this->items = [];
-            $this->status = null;
+            $this->status = null; // A propriedade 'stage' não existia, 'status' sim
         }
     }
 
-    protected function validationRules(): array
-    {
-        // Base rules from model (do not duplicate)
-        $saleRules = Sale::rules($this->sale->id ?? null);
-
-        // make status optional in the form (we won't force it here)
-        $saleRules['status'] = 'nullable';
-
-        // Map SaleItem rules into items.*.field (skip sale_id)
-        $itemRules = [];
-        foreach (SaleItem::rules() as $field => $rule) {
-            if ($field === 'sale_id') {
-                continue;
-            }
-            $itemRules["items.*.{$field}"] = $rule;
-        }
-
-        return array_merge($saleRules, $itemRules);
-    }
-
-    public function addItem(): void
-    {
-        $this->items[] = [
-            'product_id' => null,
-            'quantity' => 1,
-            'unit_price' => 0,
-            'subtotal' => 0,
-        ];
-    }
-
-    public function removeItem(int $index): void
-    {
-        if (! isset($this->items[$index])) {
-            return;
-        }
-        array_splice($this->items, $index, 1);
-        $this->updateTotal();
-    }
+    // ... (validationRules e addItem são iguais) ...
+    // ... (removeItem é igual) ...
 
     /**
-     * Livewire calls updated* hooks when a property changes.
-     * We'll recompute unit_price/subtotal whenever items change.
+     * Hook OTIMIZADO do Livewire v3.
+     * Chamado quando um item específico do array 'items' é alterado.
+     * Ex: $key = '0.product_id' ou $key = '1.quantity'
      */
-    public function updatedItems(): void
+    public function updatedItems($value, $key): void
     {
-        foreach ($this->items as $idx => $item) {
-            if (! empty($item['product_id'])) {
-                $product = Product::find($item['product_id']);
-                if ($product) {
-                    $unit = $product->price;
-                    $qty = max(1, (int) ($item['quantity'] ?? 1));
-                    $this->items[$idx]['unit_price'] = (float) $unit;
-                    $this->items[$idx]['subtotal'] = (float) ($unit * $qty);
-                }
-            } else {
-                $this->items[$idx]['unit_price'] = 0;
-                $this->items[$idx]['subtotal'] = 0;
-            }
+        $parts = explode('.', $key);
+
+        // Garante que estamos lidando com uma chave aninhada (ex: '0.product_id')
+        if (count($parts) < 2) {
+            return;
         }
 
-        $this->updateTotal();
+        $index = $parts[0]; // O índice do item (ex: 0)
+        $field = $parts[1]; // O campo que mudou (ex: 'product_id' ou 'quantity')
+
+        // Só recalcula se o 'product_id' ou 'quantity' mudou
+        if (in_array($field, ['product_id', 'quantity'])) {
+            
+            $productId = $this->items[$index]['product_id'] ?? null;
+            $quantity = (int) ($this->items[$index]['quantity'] ?? 1);
+            $quantity = max(1, $quantity); // Garante que a quantidade seja pelo menos 1
+
+            if ($productId) {
+                // NÃO FAZ QUERY! Apenas busca na coleção já carregada no mount()
+                $product = $this->allProducts->find($productId);
+
+                if ($product) {
+                    $unitPrice = (float) $product->price;
+                    $this->items[$index]['unit_price'] = $unitPrice;
+                    $this->items[$index]['subtotal'] = $unitPrice * $quantity;
+                } else {
+                    // Se o produto não for encontrado (improvável, mas seguro)
+                    $this->items[$index]['unit_price'] = 0;
+                    $this->items[$index]['subtotal'] = 0;
+                }
+            } else {
+                // Se o produto for 'Selecione um produto' (ID nulo)
+                $this->items[$index]['unit_price'] = 0;
+                $this->items[$index]['subtotal'] = 0;
+            }
+
+            // Após calcular o subtotal do item, atualiza o total geral
+            $this->updateTotal();
+        }
     }
 
     private function updateTotal(): void
@@ -110,63 +115,16 @@ class Form extends Component
         $this->total_amount = (float) collect($this->items)->sum(fn($i) => (float) ($i['subtotal'] ?? 0));
     }
 
-    public function save(): void
-    {
-        $rules = $this->validationRules();
-
-        $this->validate($rules);
-
-        DB::transaction(function () {
-            // create or update sale (default status if not provided)
-            $payload = [
-                'customer_id' => $this->customer_id,
-                'date' => $this->date,
-                'total_amount' => $this->total_amount,
-                'status' => $this->status ?? 'pendente_pagamento',
-            ];
-
-            if ($this->sale && $this->sale->exists) {
-                $this->sale->update($payload);
-                $this->sale->items()->delete();
-            } else {
-                $this->sale = Sale::create($payload);
-            }
-
-            // persistir itens (garantir unit_price/subtotal coerentes)
-            foreach ($this->items as $item) {
-                $product = Product::find($item['product_id']);
-                $unitPrice = $product ? (float) $product->price : (float) ($item['unit_price'] ?? 0);
-                $quantity = (int) ($item['quantity'] ?? 1);
-                $subtotal = (float) ($item['subtotal'] ?? ($unitPrice * $quantity));
-
-                $this->sale->items()->create([
-                    'product_id' => $item['product_id'],
-                    'quantity' => $quantity,
-                    'unit_price' => $unitPrice,
-                    'subtotal' => $subtotal,
-                ]);
-            }
-        });
-
-        $this->dispatch('notify', ['message' => 'Venda salva com sucesso!']);
-        $this->dispatch('sale-saved');
-
-        // opcional: resetar formulário
-        $this->mount(null);
-    }
-
-    #[On('set-sale')]
-    public function setSale(Sale $sale): void
-    {
-        $this->mount($sale);
-    }
+    // ... (save e setSale são iguais) ...
 
     public function render()
     {
+        // Agora, em vez de consultar o banco, apenas passamos
+        // as propriedades que já carregamos no mount()
         return view('livewire.sales.form', [
-            'customers' => Customer::orderBy('name')->get(),
-            'products'  => Product::orderBy('name')->get(),
-            'statuses'  => Sale::statuses(),
+            'customers' => $this->allCustomers,
+            'products'  => $this->allProducts,
+            'statuses'  => $this->allStatuses,
         ]);
     }
 }

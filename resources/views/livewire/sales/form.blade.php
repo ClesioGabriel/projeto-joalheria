@@ -36,15 +36,20 @@
                 @enderror
             </div>
 
+            {{-- 
+                CORREÇÃO DE LÓGICA: 
+                A propriedade no componente Form.php é 'status', não 'stage'.
+                Também estamos usando a variável $statuses vinda do render().
+            --}}
             <div>
                 <label class="block text-sm font-medium text-gray-700">Estágio</label>
-                <select wire:model.defer="stage" class="w-full border rounded-lg px-3 py-2">
+                <select wire:model.defer="status" class="w-full border rounded-lg px-3 py-2">
                     <option value="">Selecione um estágio</option>
-                    <option value="Aguardando Pagamento">Aguardando Pagamento</option>
-                    <option value="Cancelado">Cancelado</option>
-                    <option value="Concluído">Concluído</option>
+                    @foreach ($statuses as $key => $label)
+                        <option value="{{ $key }}">{{ $label }}</option>
+                    @endforeach
                 </select>
-                @error('stage') 
+                @error('status') 
                     <span class="text-red-500 text-sm">{{ $message }}</span> 
                 @enderror
             </div>
@@ -54,13 +59,24 @@
                 <h3 class="font-semibold text-lg text-gray-800 mb-3">Itens do Pedido</h3>
                 @foreach ($items as $index => $item)
                     <div class="grid grid-cols-4 gap-4 mb-3 items-center">
-                        <select wire:model="items.{{ $index }}.product_id" class="col-span-2 border rounded-lg px-3 py-2">
+                        
+                        {{-- 
+                            CORREÇÃO DE REATIVIDADE 1: Adicionado '.live'
+                            Isso força a atualização imediata assim que o usuário seleciona um produto. 
+                        --}}
+                        <select wire:model.live="items.{{ $index }}.product_id" class="col-span-2 border rounded-lg px-3 py-2">
                             <option value="">Selecione um produto</option>
                             @foreach ($products as $product)
                                 <option value="{{ $product->id }}">{{ $product->name }}</option>
                             @endforeach
                         </select>
-                        <input type="number" min="1" wire:model="items.{{ $index }}.quantity" class="border rounded-lg px-3 py-2" />
+
+                        {{-- 
+                            CORREÇÃO DE REATIVIDADE 2: Adicionado '.live'
+                            Isso força a atualização imediata a cada dígito na quantidade.
+                        --}}
+                        <input type="number" min="1" wire:model.live="items.{{ $index }}.quantity" class="border rounded-lg px-3 py-2" />
+                        
                         <span class="text-gray-700">R$ {{ number_format($items[$index]['subtotal'] ?? 0, 2, ',', '.') }}</span>
                         <button type="button" wire:click="removeItem({{ $index }})" class="text-red-600 hover:text-red-800">✕</button>
                     </div>

@@ -143,27 +143,4 @@ class Product extends Model
         return number_format($this->price, 2, '.', ',');
     }
 
-    // -------------------------
-    // Relations (if needed later)
-    // -------------------------
-
-    // Example relation placeholders (uncomment if you add related models)
-    // public function supplier()
-    // {
-    //     return $this->belongsTo(Supplier::class);
-    // }
-
-    // -------------------------
-    // Model events (optional)
-    // -------------------------
-
-    // You can use booted() to set defaults or generate serials if needed.
-    // protected static function booted()
-    // {
-    //     static::creating(function ($product) {
-    //         if (empty($product->serial_number)) {
-    //             $product->serial_number = 'SN-' . strtoupper(Str::random(8));
-    //         }
-    //     });
-    // }
 }

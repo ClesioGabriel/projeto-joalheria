@@ -148,7 +148,7 @@ class Form extends Component
             }
         });
 
-        $this->dispatchBrowserEvent('notify', ['message' => 'Venda salva com sucesso!']);
+        $this->dispatch('notify', ['message' => 'Venda salva com sucesso!']);
         $this->dispatch('sale-saved');
 
         // opcional: resetar formulário

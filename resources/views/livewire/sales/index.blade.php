@@ -4,12 +4,12 @@
         <div class="w-full max-w-6xl bg-white shadow-xl rounded-2xl overflow-hidden p-4">
             
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-gray-800">Lista de Vendas</h2>
+                <h2 class="text-lg font-semibold text-gray-800">Lista de Pedidos</h2>
                 <button
                     wire:click="create"
                     class="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-700 transition"
                 >
-                    Nova Venda
+                    Novo Pedido
                 </button>
             </div>
 
@@ -30,7 +30,7 @@
                             <td class="px-5 py-3 text-center">{{ $sale->id }}</td>
                             <td class="px-5 py-3 text-center">{{ $sale->customer->name ?? '—' }}</td>
                             <td class="px-5 py-3 text-center">{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}</td>
-                            <td class="px-5 py-3 text-center">{{ $sale->stage }}</td>
+                            <td class="px-5 py-3 text-center">{{ $sale->status }}</td>
                             <td class="px-5 py-3 text-center">R$ {{ number_format($sale->total_amount, 2, ',', '.') }}</td>
                             <td class="px-5 py-3 text-center space-x-2">
                                 <button wire:click="view({{ $sale->id }})"

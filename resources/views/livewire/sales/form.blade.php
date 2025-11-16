@@ -51,7 +51,7 @@
 
             {{-- Itens --}}
             <div>
-                <h3 class="font-semibold text-lg text-gray-800 mb-3">Itens da Venda</h3>
+                <h3 class="font-semibold text-lg text-gray-800 mb-3">Itens do Pedido</h3>
                 @foreach ($items as $index => $item)
                     <div class="grid grid-cols-4 gap-4 mb-3 items-center">
                         <select wire:model="items.{{ $index }}.product_id" class="col-span-2 border rounded-lg px-3 py-2">
@@ -91,7 +91,7 @@
                     type="submit"
                     class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
                 >
-                    Salvar Venda
+                    Salvar Pedido
                 </button>
             </div>
         </form>

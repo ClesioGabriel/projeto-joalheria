@@ -35,7 +35,7 @@ new class extends Component
                         {{ __('Produtos') }}
                     </x-nav-link>
                     <x-nav-link :href="route('sales.index')" :active="request()->routeIs('sales.*')" wire:navigate>
-                        {{ __('Vendas') }}
+                        {{ __('Pedidos') }}
                     </x-nav-link>
                 </div>
             </div>

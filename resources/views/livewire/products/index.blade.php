@@ -32,6 +32,8 @@
                         <th class="px-5 py-3 text-center">ID</th>
                         <th class="px-5 py-3 text-center">Nome</th>
                         <th class="px-5 py-3 text-center">Imagem</th>
+                        <th class="px-5 py-3 text-center">QTD. Estoque</th>
+                        <th class="px-5 py-3 text-center">Localização</th>
                         <th class="px-5 py-3 text-center">Preço</th>
                         <th class="px-5 py-3 text-center">Ações</th>
                     </tr>
@@ -60,6 +62,10 @@
                                     <span class="text-gray-400 text-xs">Sem imagem</span>
                                 @endif
                             </td>
+
+                            <td class="px-5 py-3 text-center">{{ $product->stock }}</td>
+
+                            <td class="px-5 py-3 text-center">{{ $product->location }}</td>
 
                             <td class="px-5 py-3 text-center">
                                 R$ {{ number_format($product->price, 2, ',', '.') }}

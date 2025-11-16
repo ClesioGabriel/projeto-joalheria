@@ -44,7 +44,7 @@ class Index extends Component
     {
         $sale = Sale::find($saleId);
         if (! $sale) {
-            $this->dispatchBrowserEvent('notify', ['message' => 'Venda não encontrada', 'type' => 'error']);
+            $this->dispatch('notify', ['message' => 'Venda não encontrada', 'type' => 'error']);
             return;
         }
         $this->selectedSale = $sale;
@@ -56,7 +56,7 @@ class Index extends Component
     {
         $sale = Sale::with('items.product', 'customer')->find($saleId);
         if (! $sale) {
-            $this->dispatchBrowserEvent('notify', ['message' => 'Venda não encontrada', 'type' => 'error']);
+            $this->dispatch('notify', ['message' => 'Venda não encontrada', 'type' => 'error']);
             return;
         }
         $this->selectedSale = $sale;
@@ -70,15 +70,29 @@ class Index extends Component
         $this->selectedSale = null;
     }
 
-    public function delete(int $saleId): void
+    public function cancel(int $saleId): void
     {
-        $sale = Sale::find($saleId);
+        $sale = Sale::with('items')->find($saleId);
+
         if (! $sale) {
-            $this->dispatchBrowserEvent('notify', ['message' => 'Venda não encontrada', 'type' => 'error']);
+            $this->dispatch('notify', ['message' => 'Venda não encontrada', 'type' => 'error']);
             return;
         }
-        $sale->delete();
-        $this->dispatchBrowserEvent('notify', ['message' => 'Venda excluída com sucesso!']);
+
+        if ($sale->status === 'cancelado') {
+            $this->dispatch('notify', ['message' => 'Venda já está cancelada', 'type' => 'info']);
+            return;
+        }
+
+        // realiza cancelamento através do model (restaura estoque + atualiza status)
+        try {
+            $sale->cancel();
+            $this->dispatch('notify', ['message' => 'Venda cancelada e estoque restaurado.', 'type' => 'success']);
+        } catch (\Throwable $e) {
+            // tratamento simples, mostra erro
+            $this->dispatch('notify', ['message' => 'Erro ao cancelar venda: ' . $e->getMessage(), 'type' => 'error']);
+        }
+
         $this->resetPage();
     }
 

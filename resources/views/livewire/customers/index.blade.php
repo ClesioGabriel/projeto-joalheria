@@ -21,8 +21,7 @@
                     id="customer-search"
                     placeholder="Buscar clientes por nome, email, telefone..."
                     class="block w-full p-3 text-gray-900 border border-gray-300 rounded-lg bg-white text-base focus:ring-blue-500 focus:border-blue-500"
-                    onkeyup="filterCustomers()"
-                >
+                    onkeyup="filterCustomers()">
             </div>
 
             {{-- TABELA --}}
@@ -33,48 +32,63 @@
                         <th class="px-5 py-3 text-center">Nome</th>
                         <th class="px-5 py-3 text-center">Email</th>
                         <th class="px-5 py-3 text-center">Telefone</th>
-                        <th class="px-5 py-3 text-center">Ações</th>
+
+                        {{-- endereço agora alinhado à esquerda para não empurrar ações --}}
+                        <th class="px-5 py-3 text-left">Endereço</th>
+
+                        {{-- reserva largura para ações e mantém centralizado --}}
+                        <th class="px-5 py-3 text-center w-40">Ações</th>
                     </tr>
                 </thead>
 
                 <tbody class="divide-y divide-gray-200">
-
                     @foreach ($customers as $customer)
-                        <tr class="hover:bg-gray-50 transition customer-item"
-                            data-name="{{ strtolower($customer->name) }}"
-                            data-email="{{ strtolower($customer->email) }}"
-                            data-phone="{{ strtolower($customer->phone ?? '') }}"
-                        >
-                            <td class="px-5 py-3 text-center">{{ $customer->id }}</td>
+                    <tr class="hover:bg-gray-50 transition customer-item"
+                        data-name="{{ strtolower($customer->name) }}"
+                        data-email="{{ strtolower($customer->email) }}"
+                        data-phone="{{ strtolower($customer->phone ?? '') }}">
+                        <td class="px-5 py-3 text-center">{{ $customer->id }}</td>
 
-                            <td class="px-5 py-3 text-center">{{ $customer->name }}</td>
+                        <td class="px-5 py-3 text-center">{{ $customer->name }}</td>
 
-                            <td class="px-5 py-3 text-center">{{ $customer->email }}</td>
+                        <td class="px-5 py-3 text-center">{{ $customer->email }}</td>
 
-                            <td class="px-5 py-3 text-center">{{ $customer->phone ?? '-' }}</td>
+                        <td class="px-5 py-3 text-center">{{ $customer->phone ?? '-' }}</td>
 
-                            <td class="px-5 py-3 text-center space-x-2">
+                        {{-- endereço com quebra de linha e limite de largura para manter a tabela limpa --}}
+                        <td class="px-5 py-3 text-left max-w-md">
+                            <div class="text-s text-black break-words">
+                                {{ $customer->addresses->first()
+            ? 'CEP: ' . $customer->addresses->first()->cep . ' - Nº ' . $customer->addresses->first()->number
+            : 'Sem endereço cadastrado' }}
+                            </div>
+                        </td>
+
+                        {{-- ações: wrapper flex com nowrap para evitar quebra entre botões --}}
+                        <td class="px-5 py-3 text-center">
+                            <div class="flex items-center justify-center gap-2 whitespace-nowrap">
                                 <button wire:click="view({{ $customer->id }})"
-                                        class="inline-flex items-center px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-full hover:bg-green-700 transition">
+                                    class="inline-flex items-center px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-full hover:bg-green-700 transition">
                                     Visualizar
                                 </button>
 
                                 <button wire:click="edit({{ $customer->id }})"
-                                        class="inline-flex items-center px-3 py-1.5 bg-gray-500 text-white text-xs font-semibold rounded-full hover:bg-gray-700 transition">
+                                    class="inline-flex items-center px-3 py-1.5 bg-gray-500 text-white text-xs font-semibold rounded-full hover:bg-gray-700 transition">
                                     Editar
                                 </button>
 
                                 <button wire:click="delete({{ $customer->id }})"
-                                        onclick="return confirm('Tem certeza que deseja deletar?')"
-                                        class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-full hover:bg-red-800 transition">
+                                    onclick="return confirm('Tem certeza que deseja deletar?')"
+                                    class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-full hover:bg-red-800 transition">
                                     Excluir
                                 </button>
-                            </td>
-                        </tr>
+                            </div>
+                        </td>
+                    </tr>
                     @endforeach
-
                 </tbody>
             </table>
+
 
         </div>
     </div>
@@ -84,49 +98,47 @@
         {{ $customers->links() }}
 
         @if($customers->isEmpty())
-            <div class="text-center text-gray-500 py-4">
-                Nenhum cliente encontrado.
-            </div>
+        <div class="text-center text-gray-500 py-4">
+            Nenhum cliente encontrado.
+        </div>
         @endif
     </div>
 
     {{-- MODAL FORM --}}
     @if($showFormModal)
-        <livewire:customers.form
-            :customer-id="$selectedCustomer->id ?? null"
-            wire:key="form-{{ $selectedCustomer->id ?? 'new' }}"
-        />
+    <livewire:customers.form
+        :customer-id="$selectedCustomer->id ?? null"
+        wire:key="form-{{ $selectedCustomer->id ?? 'new' }}" />
     @endif
 
     {{-- MODAL VIEW --}}
     @if($showViewModal && $selectedCustomer)
-        <livewire:customers.show
-            :customer="$selectedCustomer"
-            wire:key="show-{{ $selectedCustomer->id }}"
-        />
+    <livewire:customers.show
+        :customer="$selectedCustomer"
+        wire:key="show-{{ $selectedCustomer->id }}" />
     @endif
 
 </div>
 
 {{-- SCRIPT DE BUSCA --}}
 @once
-    <script>
-        function filterCustomers() {
-            const search = document.getElementById('customer-search').value.toLowerCase();
-            const items = document.querySelectorAll('.customer-item');
+<script>
+    function filterCustomers() {
+        const search = document.getElementById('customer-search').value.toLowerCase();
+        const items = document.querySelectorAll('.customer-item');
 
-            items.forEach(item => {
-                const name = item.dataset.name || '';
-                const email = item.dataset.email || '';
-                const phone = item.dataset.phone || '';
+        items.forEach(item => {
+            const name = item.dataset.name || '';
+            const email = item.dataset.email || '';
+            const phone = item.dataset.phone || '';
 
-                const match =
-                    name.includes(search) ||
-                    email.includes(search) ||
-                    phone.includes(search);
+            const match =
+                name.includes(search) ||
+                email.includes(search) ||
+                phone.includes(search);
 
-                item.style.display = match ? '' : 'none';
-            });
-        }
-    </script>
+            item.style.display = match ? '' : 'none';
+        });
+    }
+</script>
 @endonce

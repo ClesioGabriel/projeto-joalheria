@@ -26,7 +26,6 @@ class Form extends Component
     public ?string $state = null;
     public ?string $cep = null;
 
-    // debug helper: armazena resposta bruta do viaCEP para inspecionar se necessário
     public $debugViaCepResponse = null;
 
     public bool $lookupLoading = false;
@@ -36,7 +35,6 @@ class Form extends Component
         $this->customerId = $customerId;
 
         if ($customerId) {
-            // carregamos com addresses (belongsToMany)
             $customer = Customer::with('addresses')->find($customerId);
             if ($customer) {
                 $this->customer = $customer;
@@ -45,7 +43,6 @@ class Form extends Component
                 $this->phone = $customer->phone;
                 $this->cpf = $customer->cpf ?? '';
 
-                // pega apenas o primeiro endereço associado (se existir)
                 $addr = $customer->addresses()->first();
                 $this->street = $addr->street ?? null;
                 $this->number = $addr->number ?? null;
@@ -57,7 +54,6 @@ class Form extends Component
             }
         }
 
-        // novo cliente
         $this->customer = null;
         $this->name = '';
         $this->email = '';
@@ -80,9 +76,6 @@ class Form extends Component
         ];
     }
 
-    /**
-     * Server-side lookup (ViaCEP). Preenche campos se encontrar.
-     */
     public function lookupCep(): void
     {
         $this->lookupLoading = true;
@@ -102,7 +95,6 @@ class Form extends Component
         try {
             $response = Http::timeout(6)->get($url);
 
-            // salvar resposta bruta para debug
             $this->debugViaCepResponse = $response->body();
 
             if ($response->failed()) {
@@ -120,7 +112,6 @@ class Form extends Component
                 return;
             }
 
-            // preenche campos
             $this->street = $json['logradouro'] ?? $this->street;
             $this->neighborhood = $json['bairro'] ?? $this->neighborhood;
             $this->city = $json['localidade'] ?? $this->city;
@@ -154,14 +145,12 @@ class Form extends Component
 
             ];
 
-            // create or update customer
             if ($this->customer && $this->customer->exists) {
                 $this->customer->update($data);
             } else {
                 $this->customer = Customer::create($data);
             }
 
-            // decide se há endereço preenchido (qualquer campo não-nulo)
             $hasAnyAddress = collect([
                 $this->street,
                 $this->number,
@@ -181,31 +170,23 @@ class Form extends Component
                     'cep' => $this->cep,
                 ];
 
-                // pega primeiro endereço atual (se existir)
                 $existing = $this->customer->addresses()->first();
 
                 if ($existing) {
-                    // se o endereço atual pertence apenas a este cliente podemos atualizar direto
                     $ownersCount = $existing->customers()->count();
 
                     if ($ownersCount <= 1) {
-                        // seguro atualizar pois não afeta outros clientes
                         $existing->update($addrData);
                     } else {
-                        // endereço compartilhado: não sobrescrever; criar novo e substituir o vínculo
                         $newAddress = Address::create($addrData);
-                        // anexa o novo endereço
                         $this->customer->addresses()->attach($newAddress->id);
-                        // remove apenas a associação antiga deste cliente
                         $this->customer->addresses()->detach($existing->id);
                     }
                 } else {
-                    // sem endereço anterior: cria e associa
                     $new = Address::create($addrData);
                     $this->customer->addresses()->attach($new->id);
                 }
             } else {
-                // nenhum endereço informado: desassocia quaisquer addresses existentes deste cliente
                 if ($this->customer->addresses()->exists()) {
                     $this->customer->addresses()->detach();
                 }

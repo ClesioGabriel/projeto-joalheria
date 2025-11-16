@@ -55,7 +55,6 @@ class Sale extends Model
      */
     public function restoreStock(): void
     {
-        // Use transaction to be safe if chamado isoladamente
         DB::transaction(function () {
             foreach ($this->items()->get() as $item) {
                 Product::where('id', $item->product_id)
@@ -84,7 +83,6 @@ class Sale extends Model
     protected static function booted()
     {
         static::deleting(function (Sale $sale) {
-            // restore stock to avoid data loss
             foreach ($sale->items()->get() as $item) {
                 Product::where('id', $item->product_id)
                     ->increment('stock', $item->quantity);

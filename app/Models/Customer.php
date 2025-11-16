@@ -49,16 +49,10 @@ class Customer extends Model
         ];
     }
 
-    /**
-     * Retorna as regras para o formulário que inclui endereços
-     * Exemplo de uso no Livewire:
-     * $rules = array_merge(Customer::rules($id), $addressRulesMapped);
-     */
     public static function rulesWithAddresses($id = null): array
     {
         $rules = self::rules($id);
 
-        // transformar Address::rules() => addresses.*.field
         $addressRules = [];
         foreach (Address::rules() as $field => $rule) {
             $addressRules["addresses.*.{$field}"] = $rule;

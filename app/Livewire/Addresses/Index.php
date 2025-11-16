@@ -35,7 +35,6 @@ class Index extends Component
         $this->customerFilter = $customerId;
         $this->showFormModal = true;
 
-        // avisa o Form (componente filho) para setar o customer/id
         $this->dispatch('set-customer-for-address', $customerId);
         $this->dispatch('set-address', null);
     }
@@ -61,7 +60,6 @@ class Index extends Component
 
     public function delete(Address $address): void
     {
-        // when deleting, pivot entries are removed automatically (cascade) if migration setup
         $address->delete();
         $this->dispatch('notify', ['message' => 'Endereço excluído com sucesso!']);
         $this->resetPage();

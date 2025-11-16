@@ -16,14 +16,26 @@
                 </button>
             </div>
 
-            <div class="mb-4">
+            <div class="mb-4 flex gap-3">
+
                 <input
                     type="text"
                     id="product-search"
-                    placeholder="Buscar produtos por nome, preço, tipo, localização..."
-                    class="block w-full p-3 text-gray-900 border border-gray-300 rounded-lg bg-white text-base focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Buscar produtos por nome, preço, localização..."
+                    class="block w-3/4 p-3 text-gray-900 border border-gray-300 rounded-lg bg-white text-base focus:ring-blue-500 focus:border-blue-500"
                     onkeyup="filterProducts()"
                 >
+
+                <select
+                    id="product-type-filter"
+                    class="block w-1/4 p-3 text-gray-900 border border-gray-300 rounded-lg bg-white text-base focus:ring-blue-500 focus:border-blue-500"
+                    onchange="filterProducts()"
+                >
+                    <option value="">Todos</option>
+                    <option value="finished_product">Produto acabado</option>
+                    <option value="raw_material">Matéria prima</option>
+                </select>
+
             </div>
 
             <table class="w-full bg-white shadow-xl rounded-xl overflow-hidden">
@@ -46,7 +58,7 @@
                         <tr class="hover:bg-gray-50 transition product-item"
                             data-name="{{ strtolower($product->name) }}"
                             data-price="{{ strtolower(number_format($product->price, 2, ',', '.')) }}"
-                            data-type="{{ strtolower($product->type ?? '') }}"
+                            data-type="{{ strtolower($product->product_type ?? '') }}"
                             data-location="{{ strtolower($product->location ?? '') }}"
                         >
                             <td class="px-5 py-3 text-center">{{ $product->id }}</td>
@@ -137,6 +149,7 @@
 <script>
     function filterProducts() {
         const search = document.getElementById('product-search').value.toLowerCase();
+        const typeFilter = document.getElementById('product-type-filter').value.toLowerCase();
         const items = document.querySelectorAll('.product-item');
 
         items.forEach(item => {
@@ -145,13 +158,16 @@
             const type = item.dataset.type || '';
             const location = item.dataset.location || '';
 
-            const match =
+            const matchesText =
                 name.includes(search) ||
                 price.includes(search) ||
                 type.includes(search) ||
                 location.includes(search);
 
-            item.style.display = match ? '' : 'none';
+            const matchesType =
+                typeFilter === "" || type === typeFilter;
+
+            item.style.display = (matchesText && matchesType) ? '' : 'none';
         });
     }
 </script>

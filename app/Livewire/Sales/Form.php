@@ -32,7 +32,6 @@ class Form extends Component
 
     public function mount(?Sale $sale = null)
     {
-        // load collections once
         $this->allProducts = Product::orderBy('name')->get();
         $this->allCustomers = Customer::orderBy('name')->get();
         $this->allStatuses = Sale::statuses();
@@ -58,10 +57,6 @@ class Form extends Component
         }
     }
 
-    /**
-     * Accepts remote events to set the sale to edit.
-     * Payload can be: null, int id, array ['id'=>..], or object/array with id key.
-     */
     #[On('set-sale')]
     public function setSale($payload): void
     {
@@ -82,13 +77,11 @@ class Form extends Component
         if ($id) {
             $sale = Sale::with('items')->find($id);
             if ($sale) {
-                // re-use mount logic to populate
                 $this->mount($sale);
                 return;
             }
         }
 
-        // new sale
         $this->mount(null);
     }
 
@@ -106,9 +99,6 @@ class Form extends Component
         ];
     }
 
-    /**
-     * Add a blank item to the sale.
-     */
     public function addItem(): void
     {
         $this->items[] = [
@@ -119,9 +109,6 @@ class Form extends Component
         ];
     }
 
-    /**
-     * Remove item at index and reindex array.
-     */
     public function removeItem(int $index): void
     {
         if (! isset($this->items[$index])) {
@@ -132,10 +119,6 @@ class Form extends Component
         $this->updateTotal();
     }
 
-    /**
-     * Hook called by Livewire when an item array field changes.
-     * $key example: "0.product_id" or "1.quantity"
-     */
     public function updatedItems($value, $key): void
     {
         $parts = explode('.', $key);
@@ -151,7 +134,6 @@ class Form extends Component
             return;
         }
 
-        // Ensure quantity is at least 1 when changed
         if ($field === 'quantity') {
             $quantity = (int) ($this->items[$index]['quantity'] ?? 1);
             $quantity = max(1, $quantity);
@@ -164,13 +146,10 @@ class Form extends Component
             $quantity = max(1, $quantity);
 
             if ($productId) {
-                // use preloaded collection to avoid DB hit
                 $product = $this->allProducts->firstWhere('id', $productId);
 
                 if ($product) {
-                    // If product out of stock: disallow selection and notify
                     if ((int)$product->stock <= 0) {
-                        // reset selection
                         $this->items[$index]['product_id'] = null;
                         $this->items[$index]['unit_price'] = 0.0;
                         $this->items[$index]['quantity'] = 1;
@@ -182,7 +161,6 @@ class Form extends Component
 
                     $unitPrice = (float) $product->price;
 
-                    // If requested quantity exceeds stock, cap it
                     if ($quantity > (int)$product->stock) {
                         $quantity = (int)$product->stock;
                         $this->items[$index]['quantity'] = $quantity;
@@ -192,12 +170,10 @@ class Form extends Component
                     $this->items[$index]['unit_price'] = $unitPrice;
                     $this->items[$index]['subtotal'] = round($unitPrice * $quantity, 2);
                 } else {
-                    // product not found in memory
                     $this->items[$index]['unit_price'] = 0.0;
                     $this->items[$index]['subtotal'] = 0.0;
                 }
             } else {
-                // no product selected
                 $this->items[$index]['unit_price'] = 0.0;
                 $this->items[$index]['subtotal'] = 0.0;
             }
@@ -206,31 +182,22 @@ class Form extends Component
         }
     }
 
-    /**
-     * Recalculate total_amount based on items[] subtotals.
-     */
     private function updateTotal(): void
     {
         $this->total_amount = (float) collect($this->items)->sum(fn($i) => (float) ($i['subtotal'] ?? 0));
     }
 
-    /**
-     * Persist sale and its items with stock control.
-     */
     public function save(): void
     {
-        // Recalculate total to be safe (ensures we send total_amount to DB)
         $this->updateTotal();
 
         $this->validate();
 
-        // Validate existence of customer
         if (! $this->customer_id || ! Customer::find($this->customer_id)) {
             throw ValidationException::withMessages(['customer_id' => 'Cliente inválido.']);
         }
 
         DB::transaction(function () {
-            // include total_amount here to avoid DB NOT NULL error
             $dataSale = [
                 'customer_id' => $this->customer_id,
                 'date' => $this->date,
@@ -238,10 +205,8 @@ class Form extends Component
                 'total_amount' => $this->total_amount,
             ];
 
-            // Prepare sale variable
             $sale = null;
 
-            // If editing existing sale: restore previous stock first
             if ($this->sale && $this->sale->exists) {
                 foreach ($this->sale->items as $oldItem) {
                     Product::where('id', $oldItem->product_id)
@@ -251,14 +216,12 @@ class Form extends Component
                 $this->sale->update($dataSale);
                 $sale = $this->sale;
 
-                // delete old items (we restored stock already)
                 $sale->items()->delete();
             } else {
                 $sale = Sale::create($dataSale);
                 $this->sale = $sale;
             }
 
-            // Aggregate requested qty per product (handles same product on multiple lines)
             $requested = [];
             foreach ($this->items as $it) {
                 $pid = $it['product_id'];
@@ -273,7 +236,6 @@ class Form extends Component
                 throw ValidationException::withMessages(['items' => 'Adicione pelo menos um item com produto válido.']);
             }
 
-            // Lock rows for update and check stock availability
             $productIds = array_keys($requested);
             $lockedProducts = Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
 
@@ -287,7 +249,6 @@ class Form extends Component
                 }
             }
 
-            // Persist items and decrement stock
             foreach ($this->items as $it) {
                 $quantity  = (int) ($it['quantity'] ?? 0);
                 $unitPrice = (float) ($it['unit_price'] ?? 0.0);
@@ -300,11 +261,9 @@ class Form extends Component
                     'subtotal' => $subtotal,
                 ]);
 
-                // decrement stock (use locked model to avoid race)
                 $lockedProducts->get($it['product_id'])->decrement('stock', $quantity);
             }
 
-            // update sale totals if model has these fillable fields
             if (in_array('total_amount', $sale->getFillable())) {
                 $sale->update(['total_amount' => $this->total_amount]);
             } elseif (in_array('total', $sale->getFillable())) {
@@ -312,7 +271,6 @@ class Form extends Component
             }
         });
 
-        // events / notifications
         $this->dispatch('sale-saved');
         $this->dispatch('close-form-modal');
     }

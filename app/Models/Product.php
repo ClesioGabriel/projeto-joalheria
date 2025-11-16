@@ -10,7 +10,6 @@ namespace App\Models;
     {
         use HasFactory;
 
-        // product_type constants
         public const TYPE_FINISHED = 'finished_product';
         public const TYPE_RAW = 'raw_material';
 

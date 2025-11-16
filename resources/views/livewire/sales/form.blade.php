@@ -36,11 +36,6 @@
                 @enderror
             </div>
 
-            {{-- 
-                CORREÇÃO DE LÓGICA: 
-                A propriedade no componente Form.php é 'status', não 'stage'.
-                Também estamos usando a variável $statuses vinda do render().
-            --}}
             <div>
                 <label class="block text-sm font-medium text-gray-700">Estágio</label>
                 <select wire:model.defer="status" class="w-full border rounded-lg px-3 py-2">
@@ -71,10 +66,6 @@
                             @endforeach
                         </select>
 
-                        {{-- 
-                            CORREÇÃO DE REATIVIDADE 2: Adicionado '.live'
-                            Isso força a atualização imediata a cada dígito na quantidade.
-                        --}}
                         <input type="number" min="1" wire:model.live="items.{{ $index }}.quantity" class="border rounded-lg px-3 py-2" />
                         
                         <span class="text-gray-700">R$ {{ number_format($items[$index]['subtotal'] ?? 0, 2, ',', '.') }}</span>

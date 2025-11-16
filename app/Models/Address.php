@@ -9,7 +9,6 @@ class Address extends Model
 {
     use HasFactory;
 
-    // remove customer_id daqui: pivot table fará a associação
     protected $fillable = [
         'street',
         'number',
@@ -31,9 +30,6 @@ class Address extends Model
         ];
     }
 
-    /**
-     * Many-to-many: an address can belong to many customers.
-     */
     public function customers()
     {
         return $this->belongsToMany(Customer::class, 'address_customer');

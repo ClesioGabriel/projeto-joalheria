@@ -12,7 +12,6 @@ class Show extends Component
 
     public function mount(Address $address)
     {
-        // load customers relation for display
         $this->address = $address->load('customers');
     }
 

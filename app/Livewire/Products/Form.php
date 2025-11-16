@@ -12,13 +12,11 @@ class Form extends Component
 {
     use WithFileUploads;
 
-    // Propriedades existentes
     public $name;
     public $price;
     public $description;
     public ?Product $product = null;
 
-    // Propriedades de joia
     public $metal;
     public $weight;
     public $stone_type;
@@ -28,10 +26,8 @@ class Form extends Component
     public $serial_number;
     public $existing_photo_path;
 
-    // --- ADICIONADO: Campos Faltantes (do Model/Migration) ---
-    public $stock = 0; // Valor padrão
-    public $product_type = Product::TYPE_FINISHED; // Valor padrão
-    // --------------------------------------------------------
+    public $stock = 0; 
+    public $product_type = Product::TYPE_FINISHED;
 
     public function mount(?Product $product = null)
     {
@@ -48,10 +44,8 @@ class Form extends Component
             $this->serial_number = $product->serial_number;
             $this->existing_photo_path = $product->photo_path;
 
-            // --- ADICIONADO: Carregar campos faltantes ---
             $this->stock = $product->stock;
             $this->product_type = $product->product_type;
-            // ---------------------------------------------
         }
     }
 
@@ -68,10 +62,8 @@ class Form extends Component
             'photo' => 'nullable|image|max:1024',
             'location' => 'nullable|string|max:255',
 
-            // --- ADICIONADO: Regras para campos faltantes ---
             'stock' => 'required|integer|min:0',
             'product_type' => 'required|string|in:' . Product::TYPE_FINISHED . ',' . Product::TYPE_RAW,
-            // ------------------------------------------------
         ];
     }
 
@@ -95,10 +87,8 @@ class Form extends Component
             'photo_path' => $photoPath,
             'location' => $this->location,
             
-            // --- ADICIONADO: Salvar campos faltantes ---
             'stock' => $this->stock,
             'product_type' => $this->product_type,
-            // -------------------------------------------
         ];
 
         if ($this->product && $this->product->exists) {
@@ -113,7 +103,6 @@ class Form extends Component
 
         session()->flash('success', 'Produto salvo com sucesso!');
         $this->dispatch('product-saved');
-        // $this->dispatch('close-form-modal'); // <-- ALTERNATIVA: Despachar o evento de fechar
     }
 
     #[On('set-product')]
@@ -132,10 +121,8 @@ class Form extends Component
         $this->existing_photo_path = $product->photo_path;
         $this->photo = null;
 
-        // --- ADICIONADO: Carregar campos faltantes ao editar ---
         $this->stock = $product->stock;
         $this->product_type = $product->product_type;
-        // -------------------------------------------------------
     }
 
     public function render()

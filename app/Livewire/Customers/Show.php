@@ -17,7 +17,7 @@ class Show extends Component
 
     public function closeModal()
     {
-        $this->showViewModal = false;   // FECHA O MODAL
+        $this->showViewModal = false;  
     }
 
     public function render()

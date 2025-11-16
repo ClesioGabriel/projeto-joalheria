@@ -36,6 +36,19 @@
                 @enderror
             </div>
 
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Estágio</label>
+                <select wire:model.defer="stage" class="w-full border rounded-lg px-3 py-2">
+                    <option value="">Selecione um estágio</option>
+                    <option value="Aguardando Pagamento">Aguardando Pagamento</option>
+                    <option value="Cancelado">Cancelado</option>
+                    <option value="Concluído">Concluído</option>
+                </select>
+                @error('stage') 
+                    <span class="text-red-500 text-sm">{{ $message }}</span> 
+                @enderror
+            </div>
+
             {{-- Itens --}}
             <div>
                 <h3 class="font-semibold text-lg text-gray-800 mb-3">Itens da Venda</h3>

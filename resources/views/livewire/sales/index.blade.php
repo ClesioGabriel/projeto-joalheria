@@ -19,6 +19,7 @@
                         <th class="px-5 py-3 text-center">ID</th>
                         <th class="px-5 py-3 text-center">Cliente</th>
                         <th class="px-5 py-3 text-center">Data</th>
+                        <th class="px-5 py-3 text-center">Estágio</th>
                         <th class="px-5 py-3 text-center">Valor Total</th>
                         <th class="px-5 py-3 text-center">Ações</th>
                     </tr>
@@ -29,6 +30,7 @@
                             <td class="px-5 py-3 text-center">{{ $sale->id }}</td>
                             <td class="px-5 py-3 text-center">{{ $sale->customer->name ?? '—' }}</td>
                             <td class="px-5 py-3 text-center">{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}</td>
+                            <td class="px-5 py-3 text-center">{{ $sale->stage }}</td>
                             <td class="px-5 py-3 text-center">R$ {{ number_format($sale->total_amount, 2, ',', '.') }}</td>
                             <td class="px-5 py-3 text-center space-x-2">
                                 <button wire:click="view({{ $sale->id }})"

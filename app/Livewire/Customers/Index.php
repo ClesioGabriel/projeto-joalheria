@@ -4,68 +4,98 @@ namespace App\Livewire\Customers;
 
 use App\Models\Customer;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 
 #[Layout('layouts.app')]
 class Index extends Component
 {
+    use WithPagination;
+
     public bool $showFormModal = false;
     public bool $showViewModal = false;
     public ?Customer $selectedCustomer = null;
 
-    public $name = '';
-    public $email = '';
-    public $phone = '';
+    public string $search = '';
+
+    protected $queryString = ['search'];
 
     #[On('customer-saved')]
     #[On('close-form-modal')]
-    public function closeFormModal()
+    public function closeFormModal(): void
     {
         $this->showFormModal = false;
         $this->selectedCustomer = null;
+        $this->resetPage();
     }
 
-    public function create()
+    #[On('close-view-modal')]
+    public function closeViewModal(): void
+    {
+        $this->showViewModal = false;
+        $this->selectedCustomer = null;
+    }
+
+    public function create(): void
     {
         $this->selectedCustomer = null;
-        $this->resetFormFields();
         $this->showFormModal = true;
-
-        $this->showDropdown = false;
+        $this->dispatch('open-form-modal');
     }
 
-    public function edit(Customer $customer)
+    public function edit(int $customerId): void
     {
-        $this->name = $customer->name;
-        $this->email = $customer->email;
-        $this->phone = $customer->phone;
+        $customer = Customer::find($customerId);
+        if (!$customer) {
+            $this->dispatch('notify', ['message' => 'Cliente não encontrado', 'type' => 'error']);
+            return;
+        }
 
         $this->selectedCustomer = $customer;
         $this->showFormModal = true;
-
-        $this->showDropdown = false;
+        $this->dispatch('open-form-modal');
     }
 
-    public function delete(Customer $customer)
+    public function view(int $customerId): void
     {
+        $customer = Customer::with('addresses')->find($customerId);
+        if (!$customer) {
+            $this->dispatch('notify', ['message' => 'Cliente não encontrado', 'type' => 'error']);
+            return;
+        }
+
+        $this->selectedCustomer = $customer;
+        $this->showViewModal = true;
+    }
+
+    public function delete(int $customerId): void
+    {
+        $customer = Customer::find($customerId);
+        if (!$customer) {
+            $this->dispatch('notify', ['message' => 'Cliente não encontrado']);
+            return;
+        }
+
         $customer->delete();
-        $this->dispatch('notify', 'Cliente excluído com sucesso!');
-
-        $this->showDropdown = false;
-    }
-
-    private function resetFormFields()
-    {
-        $this->name = '';
-        $this->email = '';
-        $this->phone = '';
+        $this->resetPage();
+        $this->dispatch('notify', ['message' => 'Cliente excluído!']);
     }
 
     public function render()
     {
+        $query = Customer::query();
+
+        if ($this->search !== '') {
+            $query->where(function ($q) {
+                $q->where('name', 'like', "%{$this->search}%")
+                  ->orWhere('email', 'like', "%{$this->search}%")
+                  ->orWhere('phone', 'like', "%{$this->search}%");
+            });
+        }
+
         return view('livewire.customers.index', [
-            'customers' => Customer::latest()->paginate(10),
+            'customers' => $query->latest()->paginate(10),
         ]);
     }
 }

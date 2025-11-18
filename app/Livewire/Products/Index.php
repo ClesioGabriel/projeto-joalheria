@@ -6,17 +6,16 @@ use App\Models\Product;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class Index extends Component
 {
+    use WithPagination;
+
     public bool $showFormModal = false;
     public bool $showViewModal = false;
     public ?Product $selectedProduct = null;
-
-    public $name = '';
-    public $price = '';
-    public $description = '';
 
     #[On('product-saved')]
     #[On('close-form-modal')]
@@ -29,22 +28,13 @@ class Index extends Component
     public function create()
     {
         $this->selectedProduct = null;
-        $this->resetFormFields();
         $this->showFormModal = true;
-
-        $this->showDropdown = false;
     }
 
     public function edit(Product $product)
     {
-        $this->name = $product->name;
-        $this->price = $product->price;
-        $this->description = $product->description;
-
         $this->selectedProduct = $product;
         $this->showFormModal = true;
-
-        $this->showDropdown = false;
     }
 
     public function view(Product $product)
@@ -62,15 +52,13 @@ class Index extends Component
 
     public function delete(Product $product)
     {
-        $product->delete();
-        $this->dispatch('notify', 'Produto excluído com sucesso!');
-    }
+        if ($product->photo_path) {
+            \Storage::disk('public')->delete($product->photo_path);
+        }
 
-    public function resetFormFields()
-    {
-        $this->name = '';
-        $this->price = '';
-        $this->description = '';
+        $product->delete();
+
+        $this->dispatch('notify', 'Produto excluído com sucesso!');
     }
 
     public function render()

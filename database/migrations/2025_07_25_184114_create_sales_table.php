@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('customer_id')->constrained()->onDelete('cascade');
             $table->date('date');
+            $table->string('status')->default('em aberto');
             $table->decimal('total_amount', 10, 2);
             $table->timestamps();
         });

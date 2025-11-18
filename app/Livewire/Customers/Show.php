@@ -8,12 +8,16 @@ use Livewire\Component;
 class Show extends Component
 {
     public Customer $customer;
+    public bool $showViewModal = true;
 
-    protected $listeners = ['closeViewModal' => 'closeModal'];
+    public function mount(Customer $customer)
+    {
+        $this->customer = $customer->load('addresses');
+    }
 
     public function closeModal()
     {
-        $this->dispatch('closeViewModal');
+        $this->showViewModal = false;  
     }
 
     public function render()

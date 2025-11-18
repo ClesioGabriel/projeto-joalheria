@@ -13,9 +13,25 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
+
             $table->string('name');
-            $table->decimal('price', 10, 2);
+            $table->string('product_type')->default('finished_product'); // finished_product | raw_material
+
+            $table->decimal('price', 10, 2)->default(0.00);
+            $table->integer('stock')->default(0);
+
             $table->text('description')->nullable();
+            $table->string('image')->nullable();
+            $table->string('photo_path')->nullable();
+
+            $table->string('metal')->nullable();
+            $table->decimal('weight', 10, 2)->nullable();
+            $table->string('stone_type')->nullable();
+            $table->string('stone_size')->nullable();
+
+            $table->string('serial_number')->nullable()->unique();
+            $table->string('location')->nullable();
+
             $table->timestamps();
         });
     }

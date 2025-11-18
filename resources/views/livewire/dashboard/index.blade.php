@@ -19,8 +19,6 @@
         </div>
     </div>
 
-    <div class="p-2">
-
     <!-- Gráficos -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-white p-6 rounded-2xl shadow">
@@ -63,29 +61,46 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctxCustomers = document.getElementById('topCustomersChart').getContext('2d');
-    new Chart(ctxCustomers, {
-        type: 'bar',
-        data: {
-            labels: {!! json_encode($topCustomers->pluck('name')) !!},
-            datasets: [{
-                label: 'Total Gasto (R$)',
-                data: {!! json_encode($topCustomers->pluck('total')) !!},
-                backgroundColor: '#3b82f6'
-            }]
+    document.addEventListener('DOMContentLoaded', (event) => {
+        
+        // Gráfico 1: Clientes
+        const ctxCustomersEl = document.getElementById('topCustomersChart');
+        
+        if (ctxCustomersEl) {
+            const ctxCustomers = ctxCustomersEl.getContext('2d');
+            new Chart(ctxCustomers, {
+                type: 'bar',
+                data: {
+                    // CORRETO: Use um único @. 
+                    // Ignore o "erro" de sintaxe do seu editor.
+                    labels: @json($topCustomers->pluck('name')),
+                    datasets: [{
+                        label: 'Total Gasto (R$)',
+                        data: @json($topCustomers->pluck('total')),
+                        backgroundColor: '#3b82f6'
+                    }]
+                }
+            });
         }
-    });
 
-    const ctxProducts = document.getElementById('topProductsChart').getContext('2d');
-    new Chart(ctxProducts, {
-        type: 'pie',
-        data: {
-            labels: {!! json_encode($topProducts->pluck('name')) !!},
-            datasets: [{
-                data: {!! json_encode($topProducts->pluck('total_qty')) !!},
-                backgroundColor: ['#6366f1','#22c55e','#f97316','#ef4444','#14b8a6']
-            }]
+        // Gráfico 2: Produtos
+        const ctxProductsEl = document.getElementById('topProductsChart');
+        
+        if (ctxProductsEl) {
+            const ctxProducts = ctxProductsEl.getContext('2d');
+            new Chart(ctxProducts, {
+                type: 'pie',
+                data: {
+                    // CORRETO: Use um único @.
+                    labels: @json($topProducts->pluck('name')),
+                    datasets: [{
+                        data: @json($topProducts->pluck('total_qty')),
+                        backgroundColor: ['#6366f1','#22c55e','#f97316','#ef4444','#14b8a6']
+                    }]
+                }
+            });
         }
+        
     });
 </script>
 @endpush

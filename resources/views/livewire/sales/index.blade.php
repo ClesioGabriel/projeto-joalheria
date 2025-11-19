@@ -8,8 +8,8 @@
 
                 <button
                     wire:click="create"
-                    class="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-700 transition">
-                    Novo Pedido
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-s font-semibold rounded-full hover:bg-blue-700 transition">
+                    Novo Pedido +
                 </button>
             </div>
 
@@ -32,6 +32,7 @@
                     <option value="processando">Processando</option>
                     <option value="em_producao">Em produção</option>
                     <option value="pendente_pagamento">Aguardando pagamento</option>
+                    <option value="pronto">Pronto p entrega</option>
                     <option value="concluido">Concluído</option>
                     <option value="cancelado">Cancelado</option>
                 </select>
@@ -39,11 +40,12 @@
             </div>
 
             <table class="w-full max-w-6xl bg-white shadow-xl rounded-xl overflow-hidden">
-                <thead class="bg-gray-100 text-xs uppercase text-gray-600">
+                <thead class="bg-gray-300 text-xs uppercase text-black">
                     <tr>
                         <th class="px-5 py-3 text-center">ID</th>
                         <th class="px-5 py-3 text-center">Cliente</th>
                         <th class="px-5 py-3 text-center">Data</th>
+                        <th class="px-5 py-3 text-center">Data Final</th>
                         <th class="px-5 py-3 text-center">Estágio</th>
                         <th class="px-5 py-3 text-center">Valor Total</th>
                         <th class="px-5 py-3 text-center">Ações</th>
@@ -60,12 +62,16 @@
                             data-id="{{ $sale->id }}"
                             data-customer="{{ strtolower($sale->customer->name ?? '') }}"
                             data-date="{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}"
+                            data-date-finish="{{ $sale->date_finish ? \Carbon\Carbon::parse($sale->date_finish)->format('d/m/Y') : '' }}"
                             data-status="{{ strtolower($sale->status) }}"
                             data-total="{{ number_format($sale->total_amount, 2, ',', '.') }}"
                         >
                             <td class="px-5 py-3 text-center">{{ $sale->id }}</td>
                             <td class="px-5 py-3 text-center">{{ $sale->customer->name ?? '—' }}</td>
                             <td class="px-5 py-3 text-center">{{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}</td>
+                            <td class="px-5 py-3 text-center">
+                                {{ $sale->date_finish ? \Carbon\Carbon::parse($sale->date_finish)->format('d/m/Y') : '—' }}
+                            </td>
 
                             <td class="px-5 py-3 text-center">
                                 {{ \App\Models\Sale::statuses()[$sale->status] ?? $sale->status }}
@@ -139,6 +145,7 @@
             const id = (item.dataset.id ?? '').toLowerCase();
             const customer = (item.dataset.customer ?? '').toLowerCase();
             const date = (item.dataset.date ?? '').toLowerCase();
+            const dateFinish = (item.dataset.dateFinish ?? '') .toLowerCase(); // data-date-finish transforma em dataset.dateFinish
             const status = (item.dataset.status ?? '').toLowerCase();
             const total = (item.dataset.total ?? '').toLowerCase();
 
@@ -147,6 +154,7 @@
                 id.includes(search) ||
                 customer.includes(search) ||
                 date.includes(search) ||
+                dateFinish.includes(search) ||
                 status.includes(search) ||
                 total.includes(search);
 

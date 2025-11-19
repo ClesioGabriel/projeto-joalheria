@@ -15,6 +15,7 @@ class SaleFactory extends Factory
         return [
             'customer_id' => Customer::factory(),
             'date' => $this->faker->date(),
+            'date_finish' => $this->faker->date(),
             'total_amount' => $this->faker->randomFloat(2, 50, 1000),
         ];
     }

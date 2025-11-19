@@ -16,7 +16,8 @@ class Sale extends Model
         'customer_id',
         'date',
         'total_amount',
-        'status'
+        'status',
+        'date_finish'
     ];
 
     public static function rules($id = null): array
@@ -24,6 +25,7 @@ class Sale extends Model
         return [
             'customer_id' => 'required|exists:customers,id',
             'date' => 'required|date',
+            'date_finish' => 'required|date',
             'total_amount' => 'required|numeric|min:0',
             'status' => ['required', Rule::in(array_keys(self::statuses()))],
         ];
@@ -35,6 +37,7 @@ class Sale extends Model
             'processando' => 'Processando',
             'em_producao' => 'Em produção',
             'pendente_pagamento' => 'Aguardando pagamento',
+            'pronto' => 'Pronto p entrega',
             'concluido' => 'Concluído',
             'cancelado' => 'Cancelado',
         ];

@@ -27,12 +27,21 @@
                 @enderror
             </div>
 
-            {{-- Data --}}
+            {{-- Data Início --}}
             <div>
                 <label class="block text-sm font-medium text-gray-700">Data</label>
                 <input type="date" wire:model.defer="date" class="w-full border rounded-lg px-3 py-2">
                 @error('date') 
                     <span class="text-red-500 text-sm">{{ $message }}</span> 
+                @enderror
+            </div>
+
+            {{-- Data Final --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Data Final</label>
+                <input type="date" wire:model.defer="date_finish" class="w-full border rounded-lg px-3 py-2">
+                @error('date_finish')
+                    <span class="text-red-500 text-sm">{{ $message }}</span>
                 @enderror
             </div>
 

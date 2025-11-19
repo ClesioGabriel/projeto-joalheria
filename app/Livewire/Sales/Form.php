@@ -6,6 +6,7 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Customer;
 use App\Models\Product;
+use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ class Form extends Component
 {
     public ?int $customer_id = null;
     public string $date;
+    public string $date_finish;
     public array $items = [];
     public float $total_amount = 0;
     public ?Sale $sale = null;
@@ -39,7 +41,9 @@ class Form extends Component
         if ($sale && $sale->exists) {
             $this->sale = $sale->load('items');
             $this->customer_id = $sale->customer_id;
-            $this->date = \Carbon\Carbon::parse($sale->date)->format('Y-m-d');
+            $this->date = Carbon::parse($sale->date)->format('Y-m-d');
+            // trata date_finish podendo ser null
+            $this->date_finish = $sale->date_finish ? Carbon::parse($sale->date_finish)->format('Y-m-d') : now()->format('Y-m-d');
             $this->status = $sale->status;
             $this->items = $sale->items->map(fn($i) => [
                 'product_id' => $i->product_id,
@@ -51,6 +55,7 @@ class Form extends Component
         } else {
             $this->sale = null;
             $this->date = now()->format('Y-m-d');
+            $this->date_finish = now()->format('Y-m-d');
             $this->items = [];
             $this->status = null;
             $this->total_amount = 0;
@@ -90,6 +95,7 @@ class Form extends Component
         return [
             'customer_id'            => 'required|exists:customers,id',
             'date'                   => 'required|date',
+            'date_finish'            => 'required|date',
             'status'                 => 'nullable|string',
             'items'                  => 'required|array|min:1',
             'items.*.product_id'     => 'required|exists:products,id',
@@ -201,6 +207,7 @@ class Form extends Component
             $dataSale = [
                 'customer_id' => $this->customer_id,
                 'date' => $this->date,
+                'date_finish' => $this->date_finish,
                 'status' => $this->status,
                 'total_amount' => $this->total_amount,
             ];

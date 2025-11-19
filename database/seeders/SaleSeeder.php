@@ -31,6 +31,7 @@ class SaleSeeder extends Seeder
             $sale = Sale::create([
                 'customer_id'   => $customer->id,
                 'date'          => now(),
+                'date_finish'   => now()->addWeek(),
                 'total_amount'  => 0, // atualizado depois
                 'status'        => $statuses[array_rand($statuses)], // 👈 status aleatório válido
             ]);

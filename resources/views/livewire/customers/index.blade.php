@@ -8,8 +8,8 @@
 
                 <button
                     wire:click="create"
-                    class="inline-flex items-center px-4 py-2 bg-blue-500 text-white text-xs font-semibold rounded-full hover:bg-blue-700 transition">
-                    Novo Cliente
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-s font-semibold rounded-full hover:bg-blue-700 transition">
+                    Novo Cliente +
                 </button>
             </div>
 
@@ -23,7 +23,7 @@
             </div>
 
             <table class="w-full bg-white shadow-xl rounded-xl overflow-hidden">
-                <thead class="bg-gray-100 text-xs uppercase text-gray-600">
+                <thead class="bg-gray-300 text-xs uppercase text-black">
                     <tr>
                         <th class="px-5 py-3 text-center">Nome</th>
                         <th class="px-5 py-3 text-center">CPF</th>

@@ -12,8 +12,9 @@
         <div class="space-y-4 text-gray-700 text-lg">
             <div><span class="font-semibold">👤 Cliente:</span> {{ $sale->customer->name ?? '—' }}</div>
             <div><span class="font-semibold">📅 Data:</span> {{ \Carbon\Carbon::parse($sale->date)->format('d/m/Y') }}</div>
+            <div><span class="font-semibold">🏁 Data Final:</span> {{ $sale->date_finish ? \Carbon\Carbon::parse($sale->date_finish)->format('d/m/Y') : '—' }}</div>
             <div><span class="font-semibold">💰 Valor Total:</span> R$ {{ number_format($sale->total_amount, 2, ',', '.') }}</div>
-            <div><span class="font-semibold">📍 Estágio:</span> {{ $sale->status }}</div>
+            <div><span class="font-semibold">📍 Estágio:</span> {{ \App\Models\Sale::statuses()[$sale->status] ?? $sale->status }}</div>
         </div>
 
         <h3 class="mt-6 text-xl font-semibold text-gray-800">Itens</h3>
